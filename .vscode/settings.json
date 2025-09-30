@@ -32,5 +32,7 @@
     "**/.vscode/*.json": true,
     "**/{package.json,package-lock.json,server.xml,build.rs,web.config,.gitattributes,.env}": true,
     "**/*.{csproj,fsproj,vbproj}": true
-  }
+  },
+  "python-envs.defaultEnvManager": "ms-python.python:system",
+  "python-envs.pythonProjects": []
 }

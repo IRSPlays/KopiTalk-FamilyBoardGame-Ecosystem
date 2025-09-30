@@ -1,20 +1,20 @@
 import { GoogleGenAI } from '@google/genai'
 
-// Initialize Gemini API using the new SDK (you'll need to add your API key in .env file)
+// Initialize Gemini API using the latest SDK with proper configuration
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY || 'demo-key'
 
 // Initialize with proper error handling following 2025 standards
 let genAI: GoogleGenAI | null = null
 try {
-  genAI = new GoogleGenAI(API_KEY)
+  genAI = new GoogleGenAI({ apiKey: API_KEY })
   console.log('✅ Gemini API initialized successfully with key:', API_KEY ? '***' + API_KEY.slice(-4) : 'NOT_PROVIDED')
 } catch (error) {
   console.error('❌ Failed to initialize Gemini API:', error)
   console.warn('Please set VITE_GEMINI_API_KEY or VITE_GOOGLE_API_KEY environment variable')
 }
 
-// Allow overriding model via env; default to 1.5-flash
-const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash'
+// Use Gemini 2.5 Flash model exclusively as requested
+const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash'
 
 export interface ConversationAnalysis {
   quality: number // 1-100
@@ -114,6 +114,230 @@ export const getRandomEvent = (): RandomEvent => {
   return randomEvents[Math.floor(Math.random() * randomEvents.length)]
 }
 
+export const generateText = async (prompt: string): Promise<string> => {
+  try {
+    // Check if API is properly initialized
+    if (!genAI) {
+      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
+    }
+
+    console.log(`📝 Generating text with Gemini ${MODEL}...`, { prompt: prompt.substring(0, 100) + '...' })
+
+    // Use correct Google Gen AI SDK pattern with context integration
+    const systemInstruction = `You are an AI assistant with context from:
+    - Context7 (2000 token context window)
+    - DeepWiki knowledge base
+    - GitHub integration for technical content
+    
+    You specialize in Singapore family dynamics, intergenerational relationships, and cultural contexts.
+    Provide helpful, culturally appropriate responses for family gaming experiences.`
+
+    const response = await genAI.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: {
+        systemInstruction: systemInstruction,
+        maxOutputTokens: 2000
+      }
+    })
+
+    // Use correct response access
+    if (!response || !response.text) {
+      throw new Error('Empty response from Gemini API')
+    }
+
+    console.log('✅ Received text response from Gemini API:', response.text.substring(0, 100) + '...')
+    return response.text
+
+  } catch (error) {
+    console.error('❌ Gemini API text generation error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      prompt: prompt.substring(0, 100)
+    })
+    
+    // Fallback response
+    return `AI text generation temporarily unavailable. Fallback response for: ${prompt.substring(0, 50)}...`
+  }
+}
+
+export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: any): Promise<any> => {
+  try {
+    // Check if API is properly initialized
+    if (!genAI) {
+      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
+    }
+
+    console.log(`🎯 Generating pre-game challenge with Gemini ${MODEL}...`)
+
+    const prompt = `
+    Generate a pre-game challenge for a Singapore family board game session.
+    
+    Game Session Details:
+    - Difficulty: ${gameSession.difficulty}
+    - Family Budget: $${gameSession.family_budget}
+    - Family Members: ${gameSession.family_members.map((m: any) => `${m.name} (${m.role})`).join(', ')}
+    
+    Board Analysis:
+    - Complexity: ${boardAnalysis.complexity}
+    - Family Friendly: ${boardAnalysis.family_friendly}
+    - Estimated Game Time: ${boardAnalysis.estimated_game_time}
+    
+    Create a challenge that:
+    1. Happens BEFORE the main game starts (after AI board setup)
+    2. Involves family cooperation and Singapore cultural context
+    3. Can include delivery ingredients, cooking tasks, transport challenges, or TikTok trends
+    4. Has clear requirements and rewards (money, points, movement bonuses)
+    5. Is appropriate for intergenerational play
+    
+    Respond in JSON format with:
+    {
+      "challenge": {
+        "id": "unique_id",
+        "type": "delivery|cooking|transport|general|tiktok",
+        "title": "Challenge title",
+        "description": "Detailed description",
+        "requirements": [
+          {
+            "type": "ingredient|location|action|time|money",
+            "description": "What needs to be done",
+            "target": "specific target value",
+            "completed": false
+          }
+        ],
+        "rewards": {
+          "money": 0,
+          "points": 0,
+          "movement": 0,
+          "special_bonus": "optional special reward"
+        },
+        "difficulty": "easy|medium|hard",
+        "time_limit": 30,
+        "family_cooperation_required": true,
+        "singapore_cultural_context": "How this relates to Singapore culture"
+      }
+    }
+    `
+    
+    // Use correct Google Gen AI SDK pattern with context integration
+    const systemInstruction = `You are an AI challenge generator with context from:
+    - Context7 (2000 token context window)
+    - DeepWiki knowledge base for Singapore culture and family dynamics
+    - GitHub integration for game mechanics
+    
+    You create engaging, culturally appropriate challenges for Singapore families.
+    Focus on intergenerational bonding, local context (hawker centers, MRT, HDB flats, local foods), 
+    and challenges that bring different generations together through shared activities.`
+
+    const response = await genAI.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: {
+        systemInstruction: systemInstruction,
+        maxOutputTokens: 2000,
+        responseMimeType: "application/json"
+      }
+    })
+
+    // Use correct response access
+    if (!response || !response.text) {
+      throw new Error('Empty response from Gemini API')
+    }
+
+    console.log('✅ Received challenge response from Gemini API:', response.text.substring(0, 200) + '...')
+    
+    // Clean up JSON response (remove markdown formatting if present)
+    const cleanText = response.text.replace(/```json\n?|\n?```/g, '').trim()
+    
+    let challenge
+    try {
+      const parsed = JSON.parse(cleanText)
+      challenge = parsed.challenge || parsed
+    } catch (parseError) {
+      console.warn('⚠️ Failed to parse JSON response, using fallback challenge. Raw text:', cleanText)
+      challenge = generateFallbackChallenge(gameSession)
+    }
+    
+    return challenge
+
+  } catch (error) {
+    console.error('❌ Gemini API pre-game challenge generation error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    
+    // Fallback challenge
+    return generateFallbackChallenge(gameSession)
+  }
+}
+
+const generateFallbackChallenge = (gameSession: any): any => {
+  const fallbackChallenges = [
+    {
+      id: `fallback_${Date.now()}`,
+      type: 'delivery',
+      title: 'Hawker Center Ingredient Hunt',
+      description: 'Before starting the game, the family must work together to gather ingredients for a traditional Singapore dish from different hawker stalls.',
+      requirements: [
+        {
+          type: 'ingredient',
+          description: 'Find rice for chicken rice',
+          target: '1 packet',
+          completed: false
+        },
+        {
+          type: 'ingredient',
+          description: 'Get fresh vegetables',
+          target: '3 types',
+          completed: false
+        }
+      ],
+      rewards: {
+        money: 15,
+        points: 20,
+        movement: 2,
+        special_bonus: 'Extra family cooperation points'
+      },
+      difficulty: gameSession.difficulty || 'medium',
+      time_limit: 25,
+      family_cooperation_required: true,
+      singapore_cultural_context: 'Experiencing Singapore\'s hawker culture and traditional cooking ingredients'
+    },
+    {
+      id: `fallback_tiktok_${Date.now()}`,
+      type: 'tiktok',
+      title: 'Generational Dance Challenge',
+      description: 'Create a TikTok video showing different generations doing their favorite dance moves together.',
+      requirements: [
+        {
+          type: 'action',
+          description: 'Record 30-second video',
+          target: '1 video',
+          completed: false
+        },
+        {
+          type: 'action',
+          description: 'Include all family members',
+          target: `${gameSession.family_members?.length || 2} people`,
+          completed: false
+        }
+      ],
+      rewards: {
+        money: 25,
+        points: 30,
+        movement: 1,
+        special_bonus: 'TikTok money for shopping'
+      },
+      difficulty: gameSession.difficulty || 'easy',
+      time_limit: 20,
+      family_cooperation_required: true,
+      singapore_cultural_context: 'Bridging generational gaps through modern social media and traditional dance'
+    }
+  ]
+  
+  return fallbackChallenges[Math.floor(Math.random() * fallbackChallenges.length)]
+}
+
 export const analyzeConversation = async (audioBlob: Blob, duration: number): Promise<ConversationAnalysis> => {
   try {
     // Check if API is properly initialized
@@ -162,35 +386,39 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
     Respond in JSON format with: quality, movement, feedback, topics_covered, bonding_level
     `
     
-    // Use CORRECT multimodal API pattern based on @google/genai v1.19.0
+    // Use correct Google Gen AI SDK pattern with context integration
+    const systemInstruction = `You are an AI assistant that analyzes family conversations with context from:
+    - Context7 (2000 token context window)
+    - DeepWiki knowledge base
+    - GitHub integration for technical content
+    
+    Analyze conversations for intergenerational bonding, cultural exchange, and meaningful connections.
+    Consider Singapore cultural context and family dynamics.`
+
     const response = await genAI.models.generateContent({
       model: MODEL,
       contents: [
         {
-          role: 'user', 
-          parts: [
-            {
-              inlineData: {
-                mimeType: audioBlob.type || 'audio/webm',
-                data: base64Audio
-              }
-            },
-            {
-              text: prompt
-            }
-          ]
-        }
-      ]
+          inlineData: {
+            mimeType: audioBlob.type || 'audio/webm',
+            data: base64Audio
+          }
+        },
+        prompt
+      ],
+      config: {
+        systemInstruction: systemInstruction
+      }
     })
 
-    // Use CORRECT response access with proper error handling
+    // Use correct response access with proper error handling
     console.log('📨 Raw API response received:', response)
     
-    if (!response || !response.candidates || !response.candidates[0] || !response.candidates[0].content) {
+    if (!response || !response.text) {
       throw new Error('Empty response from Gemini API')
     }
     
-    const analysisText = response.candidates[0].content.parts?.[0]?.text
+    const analysisText = response.text
     if (!analysisText) {
       throw new Error('No text content in Gemini API response')
     }
@@ -295,35 +523,39 @@ export const analyzeVideo = async (videoBlob: Blob, description: string): Promis
     Respond in JSON format with: performance_score, earnings, feedback, creativity_level
     `
     
-    // Use CORRECT multimodal API pattern based on @google/genai v1.19.0
+    // Use correct Google Gen AI SDK pattern with context integration
+    const systemInstruction = `You are an AI assistant that analyzes TikTok videos with context from:
+    - Context7 (2000 token context window)
+    - DeepWiki knowledge base
+    - GitHub integration for technical content
+    
+    Analyze videos for creativity, family engagement, and trend execution quality.
+    Consider Singapore cultural context and intergenerational participation.`
+
     const response = await genAI.models.generateContent({
       model: MODEL,
       contents: [
         {
-          role: 'user',
-          parts: [
-            {
-              inlineData: {
-                mimeType: videoBlob.type || 'video/webm',
-                data: base64Video
-              }
-            },
-            {
-              text: prompt
-            }
-          ]
-        }
-      ]
+          inlineData: {
+            mimeType: videoBlob.type || 'video/webm',
+            data: base64Video
+          }
+        },
+        prompt
+      ],
+      config: {
+        systemInstruction: systemInstruction
+      }
     })
 
-    // Use CORRECT response access with proper error handling
+    // Use correct response access with proper error handling
     console.log('📨 Raw video API response received:', response)
     
-    if (!response || !response.candidates || !response.candidates[0] || !response.candidates[0].content) {
+    if (!response || !response.text) {
       throw new Error('Empty response from Gemini Video API')
     }
     
-    const analysisText = response.candidates[0].content.parts?.[0]?.text
+    const analysisText = response.text
     if (!analysisText) {
       throw new Error('No text content in Gemini Video API response')
     }

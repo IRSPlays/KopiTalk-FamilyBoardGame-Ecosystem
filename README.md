@@ -81,13 +81,7 @@ GOOGLE_API_KEY=your_api_key_here
 ## 🛠️ Technical Stack
 
 ### KopiTalk Web App
-- **React 18** with TypeScript for robust component development
-- **Vite** for fast development and building
-- **Tailwind CSS** for responsive, mobile-first design  
-- **Google Gemini 2.5-flash** for AI-powered conversation analysis
-- **WebRTC APIs** for real-time audio/video capture
-- **React Router** for seamless navigation
-- **Local Storage** for game state persistence
+- **Google Gemini** for AI-powered conversation analysis
 
 ### FastAPI Server
 - **FastAPI** for high-performance API endpoints
@@ -97,10 +91,7 @@ GOOGLE_API_KEY=your_api_key_here
 
 ## 🎯 AI Integration
 
-The platform uses **Google Gemini 2.5-flash** (latest model as of September 2025) for:
-- **Conversation Quality Analysis**: Evaluates family discussions for depth and engagement
-- **Board Game Vision**: Detects piece positions and game state from ESP32-CAM images  
-- **Dynamic Challenge Generation**: Creates contextual family-friendly game events
+The platform uses **Google Gemini** for:
 - **Performance Analytics**: Provides feedback on TikTok content and family interactions
 
 ## 🖥️ Running the Applications
@@ -174,14 +165,11 @@ Server will be available at http://localhost:8000/admin
 ## ⚙️ Configuration
 
 ### Environment Variables
-- `VITE_GEMINI_API_KEY` (KopiTalk): Required for AI conversation analysis
-- `VITE_GEMINI_MODEL` (KopiTalk): Optional, defaults to `gemini-1.5-flash`
-- `GOOGLE_API_KEY` (Server): Required for ESP32-CAM vision processing  
-- `GEMINI_MODEL` (Server): Optional, defaults to `gemini-2.5-flash`
+- `VITE_GEMINI_MODEL` (KopiTalk): Optional, defaults to `"gemini-1.5-flash"`
+- `GEMINI_MODEL` (Server): Optional, defaults to `"gemini-1.5-flash"`
 
 ### Model Information
-- Web App default: **gemini-1.5-flash** (override via `VITE_GEMINI_MODEL`)
-- Server default: **gemini-2.5-flash** (override via `GEMINI_MODEL`)
+- Server default: **gemini-1.5-flash** (override via `GEMINI_MODEL`)
 Both paths use the latest `@google/genai` and server SDKs with correct multimodal patterns. Choose models based on quota and availability.
 
 ## 🔧 Browser Requirements
@@ -211,10 +199,7 @@ Both paths use the latest `@google/genai` and server SDKs with correct multimoda
 4. Flash firmware and verify camera feed at `/admin`
 5. Test board game detection with physical game pieces
 
-## 🎯 Recent Updates (September 2025)
-- ✅ **FIXED GEMINI API USAGE** - Now properly shows usage in Gemini Studio!
-- ✅ **Migrated to Gemini 1.5-flash** - Working model with proper API patterns
-- ✅ **Updated SDK**: Now using `@google/genai` (latest unified SDK) 
+## 🎯 Recent Updates
 - ✅ **Correct API Calls**: Fixed `ai.models.generateContent()` and `response.text` access
 - ✅ **Enhanced Error Handling**: Robust fallback mechanisms with detailed logging
 - ✅ **Performance Optimizations**: Faster response times and better reliability

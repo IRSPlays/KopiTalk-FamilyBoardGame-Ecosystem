@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, ChefHat, Clock, Users, Star, CheckCircle, Play, Pause } from 'lucide-react'
+import { ArrowLeft, ChefHat, Clock, Users, Star, CheckCircle, Play, Pause, Gamepad2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Recipe {
   id: string
@@ -174,7 +175,12 @@ const CookingGame: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50">
+    <motion.div 
+      className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">

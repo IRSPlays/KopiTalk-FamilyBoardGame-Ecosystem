@@ -11,7 +11,7 @@ from io import BytesIO
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from fastapi.templating import Jinja2Templates
 import google.generativeai as genai
 from pydantic import BaseModel
@@ -59,11 +59,29 @@ esp32_devices: Dict[str, Dict] = {}
 latest_images: Dict[str, bytes] = {}
 game_states: Dict[str, Dict] = {}
 
+# --- Pydantic Models for API Structure ---
+class ProcessTurnResponse(BaseModel):
+    """Defines the successful response structure for the process_turn endpoint."""
+    status: str = "success"
+    model_used: str
+    processed_data: Dict
+
+class ErrorDetail(BaseModel):
+    """Defines a structured error response."""
+    error: str
+    reason: str
+    note: Optional[str] = None
+
 @app.post("/esp32/submit-image")
 async def submit_image(request: Request, esp32_id: str):
     image_bytes = await request.body()
     if not image_bytes:
         raise HTTPException(status_code=400, detail="No image data received.")
+
+    # Basic validation for image data
+    if not image_bytes.startswith(b'\xff\xd8') or not image_bytes.endswith(b'\xff\xd9'):
+        logger.warning("Received data for esp32_id=%s does not appear to be a valid JPEG.", esp32_id)
+        # Allow it for now, but this indicates a potential issue.
 
     timestamp = datetime.datetime.now(datetime.timezone.utc)
     esp32_devices[esp32_id] = {
@@ -74,15 +92,20 @@ async def submit_image(request: Request, esp32_id: str):
     
     return {"status": "success", "message": f"Image received from {esp32_id}."}
 
-@app.post("/admin/process-turn")
+@app.post(
+    "/admin/process-turn",
+    response_model=ProcessTurnResponse,
+    responses={500: {"model": ErrorDetail}, 404: {"model": ErrorDetail}}
+)
 async def process_turn(esp32_id: str, game_session_id: str, character_image: UploadFile = File(...)):
     if esp32_id not in latest_images:
-        raise HTTPException(status_code=404, detail=f"No recent image found for ESP32 with ID: {esp32_id}.")
+        detail = {"error": "Not Found", "reason": f"No recent image found for ESP32 with ID: {esp32_id}."}
+        return JSONResponse(status_code=404, content=detail)
 
     board_image_bytes = latest_images[esp32_id]
     character_image_bytes = await character_image.read()
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     model = genai.GenerativeModel(model_name)
 
     logger.info(
@@ -152,9 +175,9 @@ async def process_turn(esp32_id: str, game_session_id: str, character_image: Upl
         except Exception as inner_e:
             msg = str(inner_e) or inner_e.__class__.__name__
             if "429" in msg and "pro" in model_name:
-                fallback = "gemini-2.5-flash"
+                fallback = "gemini-1.5-flash"
                 logger.warning("429 quota on %s; retrying with fallback model=%s", model_name, fallback)
-                response = _call_model(fallback)
+                response = _call_model(fallback) # type: ignore
                 model_name = fallback
             else:
                 raise
@@ -193,20 +216,23 @@ async def process_turn(esp32_id: str, game_session_id: str, character_image: Upl
             game_state_data = _extract_json(response.text)
         except Exception as parse_e:
             logger.error("JSON parse failed: %s\nResponse head: %s", parse_e, (response.text or '')[:400])
-            raise HTTPException(status_code=500, detail={
+            detail = {
                 "error": "JSON parsing failed",
                 "reason": str(parse_e),
                 "note": "See server logs for raw response preview",
-            })
+            }
+            return JSONResponse(status_code=500, content=detail)
         
         game_states[game_session_id] = game_state_data
         
         logger.info("Processing success | keys=%s", list(game_state_data.keys()))
-        return {"status": "success", "processed_data": game_state_data, "raw_gemini_response": response.text}
+        return ProcessTurnResponse(model_used=model_name, processed_data=game_state_data)
+
     except Exception as e:
         logger.exception("Gemini processing failed: %s", e)
         # Surface a concise error to client, full trace in server logs
-        raise HTTPException(status_code=500, detail=f"Failed to process images with Gemini: {type(e).__name__}: {str(e)}")
+        detail = {"error": "Image processing failed", "reason": f"{type(e).__name__}: {str(e)}"}
+        return JSONResponse(status_code=500, content=detail)
 
 @app.get("/admin/status")
 async def get_admin_status():
@@ -240,4 +266,3 @@ async def admin_page(request: Request):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-

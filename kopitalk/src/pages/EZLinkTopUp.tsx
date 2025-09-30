@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, CreditCard, DollarSign, History, Smartphone, MapPin, Bus, Train, CheckCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, CreditCard, DollarSign, History, Smartphone, MapPin, Bus, Train, CheckCircle, AlertCircle, Gamepad2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Transaction {
   id: string
@@ -125,61 +126,108 @@ const EZLinkTopUp: React.FC = () => {
     return 'text-green-600'
   }
 
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+  }
+  const balanceVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
+  }
+  const tabVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+  }
+  const transactionVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: (i: number) => ({ opacity: 1, x: 0, transition: { delay: i * 0.05, duration: 0.4 } })
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <motion.div
+      className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50"
+      initial="hidden"
+      animate="visible"
+      variants={cardVariants}
+    >
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => navigate('/')}
+        <motion.div className="flex items-center gap-4 mb-6" variants={tabVariants}>
+          <motion.button
+            onClick={() => navigate('/game')}
             className="p-2 hover:bg-white rounded-lg transition-colors"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </motion.button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">EZ-Link Card</h1>
             <p className="text-gray-600">Manage your Singapore transport card</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Success Modal */}
-        {showSuccess && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-sm mx-4">
-              <div className="text-center">
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Top-up Successful!</h3>
-                <p className="text-gray-600 mb-4">
-                  Your EZ-Link card has been topped up successfully.
-                </p>
-                <button
-                  onClick={() => setShowSuccess(false)}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-medium"
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {showSuccess && (
+            <motion.div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white rounded-xl p-6 max-w-sm mx-4"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+              >
+                <div className="text-center">
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Top-up Successful!</h3>
+                  <p className="text-gray-600 mb-4">
+                    Your EZ-Link card has been topped up successfully.
+                  </p>
+                  <motion.button
+                    onClick={() => setShowSuccess(false)}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-medium"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Continue
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Card Information */}
-          <div className="lg:col-span-1">
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-6 text-white mb-6">
+          <motion.div className="lg:col-span-1" variants={cardVariants}>
+            <motion.div
+              className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-6 text-white mb-6"
+              initial="hidden"
+              animate="visible"
+              variants={cardVariants}
+              whileHover={{ scale: 1.02 }}
+            >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold">EZ-Link Card</h3>
                   <p className="text-blue-100">{ezlinkCard.card_type}</p>
                 </div>
-                <CreditCard className="w-8 h-8 text-blue-200" />
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <CreditCard className="w-8 h-8 text-blue-200" />
+                </motion.div>
               </div>
-              
               <div className="mb-6">
                 <p className="text-blue-100 text-sm mb-1">Card Number</p>
                 <p className="font-mono text-lg">{ezlinkCard.card_number}</p>
               </div>
-
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-blue-100">Expires</p>
@@ -190,15 +238,24 @@ const EZLinkTopUp: React.FC = () => {
                   <p className="font-semibold">{ezlinkCard.status}</p>
                 </div>
               </div>
-            </div>
-
+            </motion.div>
             {/* Balance Card */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <motion.div
+              className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+              initial="hidden"
+              animate="visible"
+              variants={balanceVariants}
+              whileHover={{ scale: 1.03 }}
+            >
               <div className="text-center">
                 <p className="text-gray-600 mb-2">Current Balance</p>
-                <p className={`text-3xl font-bold mb-4 ${getBalanceColor(ezlinkCard.balance)}`}>
+                <motion.p
+                  className={`text-3xl font-bold mb-4 ${getBalanceColor(ezlinkCard.balance)}`}
+                  animate={{ scale: [1, 1.1, 1], color: ["#22c55e", "#eab308", "#ef4444"] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
                   ${ezlinkCard.balance.toFixed(2)}
-                </p>
+                </motion.p>
                 
                 {ezlinkCard.balance < 5 && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
@@ -216,11 +273,11 @@ const EZLinkTopUp: React.FC = () => {
                   Last used: {new Date(ezlinkCard.last_used).toLocaleDateString()}
                 </p>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <motion.div className="lg:col-span-2" variants={tabVariants}>
             {/* Tab Navigation */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
               <div className="flex border-b border-gray-200">
@@ -393,51 +450,40 @@ const EZLinkTopUp: React.FC = () => {
                 )}
 
                 {activeTab === 'history' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
-                      <History className="w-5 h-5 text-gray-500" />
-                    </div>
-
-                    <div className="space-y-3">
-                      {transactions.map((transaction) => (
-                        <div
-                          key={transaction.id}
-                          className="bg-gray-50 rounded-lg p-4 border border-gray-100"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-3">
-                              {getTransactionIcon(transaction.type)}
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {transaction.description}
-                                </h4>
-                                <p className="text-sm text-gray-600">{transaction.location}</p>
-                                <p className="text-xs text-gray-500">{transaction.datetime}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className={`font-semibold ${
-                                transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Balance: ${transaction.balance_after.toFixed(2)}
-                              </p>
-                            </div>
-                          </div>
+                  <motion.div
+                    className="space-y-2"
+                    initial="hidden"
+                    animate="visible"
+                    variants={cardVariants}
+                  >
+                    {transactions.map((tx, i) => (
+                      <motion.div
+                        key={tx.id}
+                        className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm border border-gray-100"
+                        custom={i}
+                        initial="hidden"
+                        animate="visible"
+                        variants={transactionVariants}
+                        whileHover={{ scale: 1.02, backgroundColor: '#f3f4f6' }}
+                      >
+                        <div>{getTransactionIcon(tx.type)}</div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-800">{tx.description}</div>
+                          <div className="text-xs text-gray-500">{tx.location} • {tx.datetime}</div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                        <div className="font-mono text-lg font-bold">
+                          {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 

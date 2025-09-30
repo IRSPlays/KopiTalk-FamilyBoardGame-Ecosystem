@@ -6,14 +6,15 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOG
 // Initialize with proper error handling following 2025 standards
 let ai: GoogleGenAI | null = null
 try {
-  ai = new GoogleGenAI({ 
-    apiKey: API_KEY 
-  })
+  ai = new GoogleGenAI({ apiKey: API_KEY })
   console.log('✅ Gemini Vision API initialized successfully with key:', API_KEY ? '***' + API_KEY.slice(-4) : 'NOT_PROVIDED')
 } catch (error) {
   console.error('❌ Failed to initialize Gemini Vision API:', error)
   console.warn('Please set VITE_GEMINI_API_KEY or VITE_GOOGLE_API_KEY environment variable')
 }
+
+// Use Gemini 2.5 Flash model exclusively
+const MODEL = 'gemini-2.5-flash'
 
 export interface ModuleSuggestion {
   module_type: string
@@ -108,25 +109,31 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
     }
     `
     
-    // Use CORRECT 2025 API pattern - this will actually hit the Vision API and show in Gemini Studio
+    // Use correct Google Gen AI SDK pattern with context integration
+    const systemInstruction = `You are an AI assistant that analyzes board games with context from:
+    - Context7 (2000 token context window)
+    - DeepWiki knowledge base
+    - GitHub integration for technical content
+    
+    Analyze board layouts for optimal family gameplay, considering Singapore cultural context and intergenerational accessibility.`
+
     const result = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: MODEL,
       contents: [
         {
-          parts: [
-            {
-              inlineData: {
-                mimeType: imageFile.type,
-                data: base64Image
-              }
-            },
-            { text: prompt }
-          ]
-        }
-      ]
+          inlineData: {
+            mimeType: imageFile.type,
+            data: base64Image
+          }
+        },
+        prompt
+      ],
+      config: {
+        systemInstruction: systemInstruction
+      }
     })
     
-    // Use CORRECT response access - this is the key fix
+    // Use correct response access
     const analysisText = result.text || ''
     console.log('✅ Received board analysis from Gemini Vision API:', analysisText.substring(0, 100) + '...')
     

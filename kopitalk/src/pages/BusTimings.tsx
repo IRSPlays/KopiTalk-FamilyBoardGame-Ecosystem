@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Bus, Clock, MapPin, RefreshCw, Navigation, Star } from 'lucide-react'
+import { ArrowLeft, Bus, Clock, MapPin, RefreshCw, Navigation, Star, Gamepad2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface BusService {
   service_no: string
@@ -147,7 +148,12 @@ const BusTimings: React.FC = () => {
   }, [favoriteStops])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <motion.div 
+      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -160,17 +166,46 @@ const BusTimings: React.FC = () => {
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Bus Timings</h1>
+                <motion.h1 
+                  className="text-2xl font-bold text-gray-900"
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, #111827, #3b82f6, #111827)',
+                    backgroundSize: '200% 100%',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent'
+                  }}
+                  animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+                >
+                  Bus Timings
+                </motion.h1>
                 <p className="text-gray-600">Real-time bus arrival information</p>
               </div>
-              <button
-                onClick={refreshTimings}
-                disabled={isRefreshing}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
-              >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
+              <div className="flex gap-2">
+                <motion.button
+                  onClick={() => navigate('/game')}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <Gamepad2 className="w-4 h-4" />
+                  </motion.div>
+                  Back to Game
+                </motion.button>
+                <button
+                  onClick={refreshTimings}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -197,8 +232,8 @@ const BusTimings: React.FC = () => {
                 
                 {filteredStops
                   .filter(stop => favoriteStops.includes(stop.id))
-                  .map((stop) => (
-                    <div
+                  .map((stop, index) => (
+                    <motion.div
                       key={stop.id}
                       onClick={() => setSelectedStop(stop)}
                       className={`p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -206,13 +241,23 @@ const BusTimings: React.FC = () => {
                           ? 'border-blue-300 bg-blue-50'
                           : 'border-gray-200 hover:bg-gray-50'
                       }`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 + index * 0.05 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <h4 className="font-medium text-gray-900">{stop.name}</h4>
                             {favoriteStops.includes(stop.id) && (
-                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                              <motion.div
+                                animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                              >
+                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                              </motion.div>
                             )}
                           </div>
                           <p className="text-sm text-gray-600">{stop.road}</p>
@@ -232,7 +277,7 @@ const BusTimings: React.FC = () => {
                           }`} />
                         </button>
                       </div>
-                    </div>
+                    </motion.div>
                   ))
                 }
 
@@ -379,7 +424,7 @@ const BusTimings: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
