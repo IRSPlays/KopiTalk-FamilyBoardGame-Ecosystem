@@ -90,71 +90,133 @@ const BoardGame: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-kopi-50 to-talk-50 flex items-center justify-center">
+      <motion.div 
+        className="min-h-screen bg-gradient-to-br from-kopi-50 to-talk-50 flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kopi-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading game...</p>
+          <motion.div 
+            className="relative mx-auto mb-4"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <div className="h-12 w-12 border-4 border-kopi-200 border-t-kopi-500 rounded-full"></div>
+          </motion.div>
+          <motion.p 
+            className="text-gray-600"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Loading game...
+          </motion.p>
         </div>
-      </div>
+      </motion.div>
     )
   }
 
   if (!gameSession) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-kopi-50 to-talk-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 text-lg mb-4">Game not found</p>
-          <button
+      <motion.div 
+        className="min-h-screen bg-gradient-to-br from-kopi-50 to-talk-50 flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <motion.div 
+          className="text-center"
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 200 }}
+        >
+          <motion.p 
+            className="text-red-600 text-lg mb-4"
+            animate={{ y: [0, -5, 0] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            Game not found
+          </motion.p>
+          <motion.button
             onClick={() => navigate('/')}
             className="bg-kopi-500 text-white px-6 py-2 rounded-lg hover:bg-kopi-600 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             Return Home
-          </button>
-        </div>
-      </div>
+          </motion.button>
+        </motion.div>
+      </motion.div>
     )
   }
 
   // Render based on game phase
-  switch (gameSession.game_phase) {
-    case 'family_setup':
-      return (
-        <FamilySetup
-          onSetupComplete={handleFamilySetupComplete}
-        />
-      )
-    
-    case 'board_setup':
-      return (
-        <BoardSetupModal
-          difficulty={gameSession.difficulty}
-          onSetupComplete={handleBoardSetupComplete}
-        />
-      )
-    
-    case 'gameplay':
-      return (
-        <GameplayInterface
-          gameSession={gameSession}
-          onUpdateGame={updateGameSession}
-        />
-      )
-    
-    default:
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-kopi-50 to-talk-50 flex items-center justify-center">
+  return (
+    <AnimatePresence mode="wait">
+      {gameSession.game_phase === 'family_setup' && (
+        <motion.div
+          key="family_setup"
+          initial={{ opacity: 0, x: 100 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -100 }}
+          transition={{ duration: 0.3 }}
+        >
+          <FamilySetup onSetupComplete={handleFamilySetupComplete} />
+        </motion.div>
+      )}
+      
+      {gameSession.game_phase === 'board_setup' && (
+        <motion.div
+          key="board_setup"
+          initial={{ opacity: 0, x: 100 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -100 }}
+          transition={{ duration: 0.3 }}
+        >
+          <BoardSetupModal
+            difficulty={gameSession.difficulty}
+            onSetupComplete={handleBoardSetupComplete}
+          />
+        </motion.div>
+      )}
+      
+      {gameSession.game_phase === 'gameplay' && (
+        <motion.div
+          key="gameplay"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.3 }}
+        >
+          <GameplayInterface
+            gameSession={gameSession}
+            onUpdateGame={updateGameSession}
+          />
+        </motion.div>
+      )}
+      
+      {!['family_setup', 'board_setup', 'gameplay'].includes(gameSession.game_phase) && (
+        <motion.div 
+          key="unknown"
+          className="min-h-screen bg-gradient-to-br from-kopi-50 to-talk-50 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
           <div className="text-center">
             <p className="text-gray-600 text-lg mb-4">Unknown game phase: {gameSession.game_phase}</p>
-            <button
+            <motion.button
               onClick={() => navigate('/')}
               className="bg-kopi-500 text-white px-6 py-2 rounded-lg hover:bg-kopi-600 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Return Home
-            </button>
+            </motion.button>
           </div>
-        </div>
-      )
-  }
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 }
 
 export default BoardGame

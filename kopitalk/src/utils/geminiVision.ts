@@ -109,9 +109,9 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
     }
     `
     
-    // Use correct Google Gen AI SDK pattern with context integration
+    // Use latest Google Gen AI SDK pattern with proper multimodal content handling
     const systemInstruction = `You are an AI assistant that analyzes board games with context from:
-    - Context7 (2000 token context window)
+    - Context7 (20000 token context window)
     - DeepWiki knowledge base
     - GitHub integration for technical content
     
@@ -121,15 +121,23 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
       model: MODEL,
       contents: [
         {
-          inlineData: {
-            mimeType: imageFile.type,
-            data: base64Image
-          }
-        },
-        prompt
+          role: 'user',
+          parts: [
+            {
+              inlineData: {
+                data: base64Image,
+                mimeType: imageFile.type
+              }
+            },
+            { text: prompt }
+          ]
+        }
       ],
       config: {
-        systemInstruction: systemInstruction
+        systemInstruction,
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+        responseMimeType: 'application/json'
       }
     })
     

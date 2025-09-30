@@ -6,6 +6,9 @@ export interface GameSession {
   game_phase: string
   current_player_index: number
   game_scenario: any
+  challenges_completed?: any[]
+  total_turns?: number
+  game_events?: any[]
   created_date: string
   last_updated: string
 }

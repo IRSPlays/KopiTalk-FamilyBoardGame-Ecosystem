@@ -1,20 +1,20 @@
 import { GoogleGenAI } from '@google/genai'
 
-// Initialize Gemini API using the latest SDK with proper configuration
+// Initialize Gemini API using the latest @google/genai SDK (2025 standard)
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY || 'demo-key'
 
-// Initialize with proper error handling following 2025 standards
-let genAI: GoogleGenAI | null = null
+// Initialize with proper error handling following latest Google Gen AI SDK patterns
+let ai: GoogleGenAI | null = null
 try {
-  genAI = new GoogleGenAI({ apiKey: API_KEY })
-  console.log('✅ Gemini API initialized successfully with key:', API_KEY ? '***' + API_KEY.slice(-4) : 'NOT_PROVIDED')
+  ai = new GoogleGenAI({ apiKey: API_KEY })
+  console.log('✅ Gemini API initialized successfully with @google/genai SDK')
 } catch (error) {
   console.error('❌ Failed to initialize Gemini API:', error)
-  console.warn('Please set VITE_GEMINI_API_KEY or VITE_GOOGLE_API_KEY environment variable')
+  console.warn('⚠️ Please set VITE_GEMINI_API_KEY or VITE_GOOGLE_API_KEY environment variable')
 }
 
-// Use Gemini 2.5 Flash model exclusively as requested
-const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash'
+// Use Gemini 2.5 Flash model (latest stable model)
+const MODEL = 'gemini-2.5-flash'
 
 export interface ConversationAnalysis {
   quality: number // 1-100
@@ -117,54 +117,58 @@ export const getRandomEvent = (): RandomEvent => {
 export const generateText = async (prompt: string): Promise<string> => {
   try {
     // Check if API is properly initialized
-    if (!genAI) {
+    if (!ai) {
       throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
     }
 
-    console.log(`📝 Generating text with Gemini ${MODEL}...`, { prompt: prompt.substring(0, 100) + '...' })
+    console.log(`📝 Generating text with Gemini ${MODEL}...`)
 
-    // Use correct Google Gen AI SDK pattern with context integration
+    // Use latest Google Gen AI SDK pattern with context integration
     const systemInstruction = `You are an AI assistant with context from:
-    - Context7 (2000 token context window)
+    - Context7 (20000 token context window)
     - DeepWiki knowledge base
     - GitHub integration for technical content
     
     You specialize in Singapore family dynamics, intergenerational relationships, and cultural contexts.
     Provide helpful, culturally appropriate responses for family gaming experiences.`
 
-    const response = await genAI.models.generateContent({
+    const response = await ai.models.generateContent({
       model: MODEL,
-      contents: prompt,
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }]
+        }
+      ],
       config: {
-        systemInstruction: systemInstruction,
-        maxOutputTokens: 2000
+        systemInstruction,
+        temperature: 0.8,
+        maxOutputTokens: 2000,
+        topK: 40,
+        topP: 0.95
       }
     })
 
-    // Use correct response access
+    // Use correct response access pattern
     if (!response || !response.text) {
       throw new Error('Empty response from Gemini API')
     }
 
-    console.log('✅ Received text response from Gemini API:', response.text.substring(0, 100) + '...')
+    console.log('✅ Received text response from Gemini API')
     return response.text
 
   } catch (error) {
-    console.error('❌ Gemini API text generation error:', {
-      error: error instanceof Error ? error.message : error,
-      stack: error instanceof Error ? error.stack : undefined,
-      prompt: prompt.substring(0, 100)
-    })
+    console.error('❌ Gemini API text generation error:', error)
     
     // Fallback response
-    return `AI text generation temporarily unavailable. Fallback response for: ${prompt.substring(0, 50)}...`
+    return `AI text generation temporarily unavailable. Please check your API configuration.`
   }
 }
 
 export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: any): Promise<any> => {
   try {
     // Check if API is properly initialized
-    if (!genAI) {
+    if (!ai) {
       throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
     }
 
@@ -229,7 +233,7 @@ export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: 
     Focus on intergenerational bonding, local context (hawker centers, MRT, HDB flats, local foods), 
     and challenges that bring different generations together through shared activities.`
 
-    const response = await genAI.models.generateContent({
+    const response = await ai.models.generateContent({
       model: MODEL,
       contents: prompt,
       config: {
@@ -341,7 +345,7 @@ const generateFallbackChallenge = (gameSession: any): any => {
 export const analyzeConversation = async (audioBlob: Blob, duration: number): Promise<ConversationAnalysis> => {
   try {
     // Check if API is properly initialized
-    if (!genAI) {
+    if (!ai) {
       throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
     }
 
@@ -395,7 +399,7 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
     Analyze conversations for intergenerational bonding, cultural exchange, and meaningful connections.
     Consider Singapore cultural context and family dynamics.`
 
-    const response = await genAI.models.generateContent({
+    const response = await ai.models.generateContent({
       model: MODEL,
       contents: [
         {
@@ -476,7 +480,7 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
 export const analyzeVideo = async (videoBlob: Blob, description: string): Promise<VideoAnalysis> => {
   try {
     // Check if API is properly initialized
-    if (!genAI) {
+    if (!ai) {
       throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
     }
 
@@ -532,7 +536,7 @@ export const analyzeVideo = async (videoBlob: Blob, description: string): Promis
     Analyze videos for creativity, family engagement, and trend execution quality.
     Consider Singapore cultural context and intergenerational participation.`
 
-    const response = await genAI.models.generateContent({
+    const response = await ai.models.generateContent({
       model: MODEL,
       contents: [
         {
