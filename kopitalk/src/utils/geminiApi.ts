@@ -16,35 +16,62 @@ try {
 // Use Gemini 2.5 Flash model (latest stable model)
 const MODEL = 'gemini-2.5-flash'
 
+/**
+ * Represents the analysis of a recorded family conversation.
+ */
 export interface ConversationAnalysis {
-  quality: number // 1-100
-  movement: number // 1-5 moves
-  earnings: number // $0 for audio (movement only)
-  feedback: string
-  topics_covered: string[]
-  bonding_level: 'low' | 'medium' | 'high' | 'excellent'
+  /** A score from 1-100 representing the quality of the conversation. */
+  quality: number;
+  /** The number of spaces to move on the board as a reward (typically 1-5). */
+  movement: number;
+  /** The monetary earnings from the conversation (typically $0, as audio rewards movement). */
+  earnings: number;
+  /** Constructive feedback on the conversation. */
+  feedback: string;
+  /** A list of topics that were identified in the conversation. */
+  topics_covered: string[];
+  /** An assessment of the level of intergenerational bonding achieved. */
+  bonding_level: 'low' | 'medium' | 'high' | 'excellent';
 }
 
+/**
+ * Represents the analysis of a submitted TikTok video.
+ */
 export interface VideoAnalysis {
-  performance_score: number // 1-100
-  earnings: number // $5-$10
-  feedback: string
-  creativity_level: 'basic' | 'good' | 'great' | 'amazing'
+  /** A score from 1-100 representing the performance and creativity of the video. */
+  performance_score: number;
+  /** The amount of money earned from the video (typically $5-$10). */
+  earnings: number;
+  /** Feedback on the video's content and execution. */
+  feedback: string;
+  /** An assessment of the creativity level of the video. */
+  creativity_level: 'basic' | 'good' | 'great' | 'amazing';
 }
 
+/**
+ * Represents a random event that can occur in the game, often after a conversation.
+ */
 export interface RandomEvent {
-  type: 'positive' | 'negative' | 'funny_face' | 'funny_dance' | 'snack_time' | 'drink_time'
-  title: string
-  description: string
-  emoji: string
+  /** The category of the random event. */
+  type: 'positive' | 'negative' | 'funny_face' | 'funny_dance' | 'snack_time' | 'drink_time';
+  /** The title of the event. */
+  title: string;
+  /** A description of what happens during the event. */
+  description: string;
+  /** An emoji to visually represent the event. */
+  emoji: string;
+  /** The game effects of the event, such as changes to money, movement, or points. */
   effect?: {
-    money?: number
-    movement?: number
-    points?: number
-  }
+    money?: number;
+    movement?: number;
+    points?: number;
+  };
 }
 
-// Conversation topics for intergenerational bonding
+/**
+ * A curated list of conversation starters designed to encourage
+ * intergenerational bonding and storytelling.
+ */
 export const conversationTopics = [
   "Share a childhood memory from your generation",
   "What technology surprised you the most in your lifetime?",
@@ -106,19 +133,36 @@ const randomEvents: RandomEvent[] = [
   }
 ]
 
+/**
+ * Selects and returns a random conversation topic from the predefined list.
+ * @returns {string} A random topic to be used as a conversation starter.
+ */
 export const getRandomTopic = (): string => {
-  return conversationTopics[Math.floor(Math.random() * conversationTopics.length)]
-}
+  return conversationTopics[Math.floor(Math.random() * conversationTopics.length)];
+};
 
+/**
+ * Selects and returns a random event from the predefined list.
+ * @returns {RandomEvent} A random event object with a title, description, and potential effects.
+ */
 export const getRandomEvent = (): RandomEvent => {
-  return randomEvents[Math.floor(Math.random() * randomEvents.length)]
-}
+  return randomEvents[Math.floor(Math.random() * randomEvents.length)];
+};
 
+/**
+ * Sends a text prompt to the Gemini API and returns the generated text response.
+ * This function includes a system instruction to provide context for the AI,
+ * specializing its responses for Singaporean family and cultural contexts.
+ *
+ * @param {string} prompt - The text prompt to send to the AI.
+ * @returns {Promise<string>} A promise that resolves to the AI-generated text.
+ *                            Returns a fallback message on error.
+ */
 export const generateText = async (prompt: string): Promise<string> => {
   try {
     // Check if API is properly initialized
     if (!ai) {
-      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
+      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.');
     }
 
     console.log(`📝 Generating text with Gemini ${MODEL}...`)
@@ -165,11 +209,21 @@ export const generateText = async (prompt: string): Promise<string> => {
   }
 }
 
+/**
+ * Generates a pre-game challenge using the Gemini API based on the current
+ * game session and board analysis. It constructs a detailed prompt to request a
+ * culturally relevant and engaging challenge in a specific JSON format.
+ *
+ * @param {any} gameSession - The current game session object.
+ * @param {any} boardAnalysis - An analysis of the current game board setup.
+ * @returns {Promise<any>} A promise that resolves to the generated challenge object.
+ *                         Returns a fallback challenge on error.
+ */
 export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: any): Promise<any> => {
   try {
     // Check if API is properly initialized
     if (!ai) {
-      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
+      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.');
     }
 
     console.log(`🎯 Generating pre-game challenge with Gemini ${MODEL}...`)
@@ -275,6 +329,14 @@ export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: 
   }
 }
 
+/**
+ * Generates a predefined, random fallback challenge. This function is used when the
+ * Gemini API fails to generate a challenge, ensuring the game can still proceed.
+ *
+ * @param {any} gameSession - The current game session object, used to tailor the
+ *                            fallback challenge's difficulty and context.
+ * @returns {any} A fallback challenge object.
+ */
 const generateFallbackChallenge = (gameSession: any): any => {
   const fallbackChallenges = [
     {
@@ -342,11 +404,22 @@ const generateFallbackChallenge = (gameSession: any): any => {
   return fallbackChallenges[Math.floor(Math.random() * fallbackChallenges.length)]
 }
 
+/**
+ * Analyzes a recorded audio conversation using the Gemini multimodal API.
+ * It converts the audio blob to base64, sends it to the model with a
+ * contextual prompt, and parses the JSON response to return a structured
+ * analysis. Includes robust error handling and a fallback mechanism.
+ *
+ * @param {Blob} audioBlob - The audio data to be analyzed.
+ * @param {number} duration - The duration of the audio in seconds.
+ * @returns {Promise<ConversationAnalysis>} A promise that resolves to an object
+ *                                          containing the conversation analysis.
+ */
 export const analyzeConversation = async (audioBlob: Blob, duration: number): Promise<ConversationAnalysis> => {
   try {
     // Check if API is properly initialized
     if (!ai) {
-      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
+      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.');
     }
 
   console.log(`🎙️ Analyzing conversation with Gemini model=${MODEL} (multimodal)...`, {
@@ -477,11 +550,22 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
   }
 }
 
+/**
+ * Analyzes a submitted video using the Gemini multimodal vision API.
+ * It converts the video blob to base64, sends it to the model along with a
+ * descriptive prompt, and parses the JSON response to return a performance
+ * analysis. Includes robust error handling and a fallback mechanism.
+ *
+ * @param {Blob} videoBlob - The video data to be analyzed.
+ * @param {string} description - A user-provided description of the video content.
+ * @returns {Promise<VideoAnalysis>} A promise that resolves to an object
+ *                                   containing the video performance analysis.
+ */
 export const analyzeVideo = async (videoBlob: Blob, description: string): Promise<VideoAnalysis> => {
   try {
     // Check if API is properly initialized
     if (!ai) {
-      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
+      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.');
     }
 
   console.log(`📹 Analyzing TikTok video with Gemini model=${MODEL} (multimodal vision)...`, {

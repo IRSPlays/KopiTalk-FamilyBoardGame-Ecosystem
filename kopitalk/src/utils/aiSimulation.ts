@@ -1,10 +1,26 @@
-// Simulates Gemini API analysis of audio recordings
-export async function analyzeAudioConversation(audioBlob: Blob): Promise<{ quality: number; movement: number; earnings: number; feedback: string }> {
+/**
+ * @file This file contains functions that simulate the behavior of the Gemini API
+ * for local development and testing purposes. They mimic API delays and return
+ * randomized, plausible-looking analysis data without making actual API calls.
+ */
+
+/**
+ * Simulates the analysis of an audio conversation by the Gemini API.
+ * This function introduces an artificial delay and then generates a result
+ * based on pseudo-random calculations and the estimated duration of the audio.
+ *
+ * @param {Blob} audioBlob - The audio data to be "analyzed".
+ * @returns {Promise<{ quality: number; movement: number; earnings: number; feedback: string }>}
+ *          A promise that resolves to a simulated analysis object.
+ */
+export async function analyzeAudioConversation(
+  audioBlob: Blob,
+): Promise<{ quality: number; movement: number; earnings: number; feedback: string }> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 2000))
-  
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
   // Simulate analysis results based on audio duration and "quality"
-  const duration = audioBlob.size / 1000 // Rough estimate
+  const duration = audioBlob.size / 1000; // Rough estimate
   const baseQuality = Math.random() * 0.4 + 0.6 // 60-100%
   const durationBonus = Math.min(duration / 30, 1) // Bonus for longer recordings
   
@@ -27,13 +43,26 @@ export async function analyzeAudioConversation(audioBlob: Blob): Promise<{ quali
   }
 }
 
-// Simulates Gemini API analysis of TikTok videos
-export async function analyzeTikTokVideo(videoBlob: Blob, trendDescription: string): Promise<{ earnings: number; feedback: string; performance_score: number }> {
+/**
+ * Simulates the analysis of a TikTok video by the Gemini API.
+ * This function introduces an artificial delay and generates a performance score
+ * based on the video's file size and the length of its description, simulating
+ * an assessment of effort and content.
+ *
+ * @param {Blob} videoBlob - The video data to be "analyzed".
+ * @param {string} trendDescription - The description accompanying the video.
+ * @returns {Promise<{ earnings: number; feedback: string; performance_score: number }>}
+ *          A promise that resolves to a simulated video analysis object.
+ */
+export async function analyzeTikTokVideo(
+  videoBlob: Blob,
+  trendDescription: string,
+): Promise<{ earnings: number; feedback: string; performance_score: number }> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 3000))
-  
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
   // Simulate analysis based on video size and description length
-  const videoSize = videoBlob.size / (1024 * 1024) // MB
+  const videoSize = videoBlob.size / (1024 * 1024); // MB
   const descriptionLength = trendDescription.length
   
   // Base performance calculation

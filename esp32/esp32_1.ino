@@ -1,17 +1,29 @@
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include "esp_camera.h"
 #include <HTTPClient.h>
 
-// Wi-Fi credentials
+//==============================================================================
+// Global Variables & Pin Definitions
+//==============================================================================
+
+/** @brief The SSID (name) of the Wi-Fi network to connect to. */
 const char* ssid = "Epicwifi";
+/** @brief The password for the Wi-Fi network. */
 const char* password = "Epicwifi";
 
-// Server details
+/** @brief The base URL of the server endpoint to submit images to. */
 const char* server_url = "https://sturdy-giggle-jvwx79v964r2p9vx-8000.app.github.dev/esp32/submit-image";
+/** @brief A unique identifier for this specific ESP32 device. */
 const char* esp32_id = "esp32-cam-01";
+/** @brief An identifier for the game session, used for tracking. */
 const char* game_session_id = "game-01";
 
-// Pin definition for CAMERA_MODEL_AI_THINKER
+/**
+ * @brief Pin definition for the AI-Thinker ESP32-CAM model.
+ * These pins are specific to the hardware and are required for the camera
+ * driver to interface with the camera sensor.
+ */
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
 #define XCLK_GPIO_NUM      0
@@ -29,9 +41,22 @@ const char* game_session_id = "game-01";
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
+/**
+ * @brief Initializes the ESP32, including Serial, Wi-Fi, and the camera.
+ *
+ * This function runs once at startup. It performs the following steps:
+ * 1. Starts the serial communication for debugging output.
+ * 2. Connects the device to the specified Wi-Fi network.
+ * 3. Configures and initializes the camera module with specific pin
+ *    definitions and image settings (format, frame size, quality).
+ *
+ * @note This function will block until a Wi-Fi connection is established.
+ *       If the camera fails to initialize, an error message is printed to
+ *       the Serial monitor, and the setup may not complete successfully.
+ */
 void setup() {
   Serial.begin(115200);
-  
+
   // Wi-Fi connection
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -78,27 +103,38 @@ void setup() {
   }
 }
 
+/**
+ * @brief The main execution loop.
+ *
+ * This function runs repeatedly after `setup()` has completed. It performs
+ * the following actions in a cycle:
+ * 1. Pauses for a short delay (1 second).
+ * 2. Captures a frame from the camera.
+ * 3. If the capture is successful and Wi-Fi is connected, it sends the image
+ *    data via an HTTP POST request to the configured server URL.
+ * 4. It uses a secure WiFi client (`WiFiClientSecure`) but disables SSL
+ *    validation (`setInsecure()`) for testing purposes.
+ * 5. Prints the server's response code and body to the Serial monitor.
+ * 6. Releases the frame buffer to free up memory.
+ *
+ * @note The loop includes a 1-second delay, so an image is sent approximately
+ *       every second, plus the time it takes to capture and transmit the image.
+ */
 void loop() {
   // Capture and send image every 10 seconds
   delay(1000);
-  
+
   camera_fb_t * fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("Camera capture failed");
     return;
   }
 
-  #include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include "esp_camera.h"
-#include <HTTPClient.h>
-
-// ... existing code ...
   if(WiFi.status()== WL_CONNECTED){
     WiFiClientSecure client;
     client.setInsecure(); // For testing only, bypass SSL certificate validation
     HTTPClient http;
-    
+
     String url = String(server_url) + "?esp32_id=" + String(esp32_id) + "&game_session_id=" + String(game_session_id);
     Serial.print("Requesting URL: ");
     Serial.println(url);

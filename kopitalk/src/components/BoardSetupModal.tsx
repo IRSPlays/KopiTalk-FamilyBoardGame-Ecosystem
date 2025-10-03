@@ -2,81 +2,130 @@ import React, { useState, useRef } from 'react'
 import { Camera, Upload, Sparkles, CheckCircle, AlertCircle } from 'lucide-react'
 import { analyzeBoardImage, BoardAnalysis } from '../utils/geminiVision'
 
+/**
+ * Props for the BoardSetupModal component.
+ */
 interface Props {
-  difficulty: string
-  onSetupComplete: () => void
+  /** The difficulty level selected for the game, which influences the AI analysis. */
+  difficulty: string;
+  /** A callback function to be invoked when the board setup is complete. */
+  onSetupComplete: () => void;
 }
 
+/**
+ * A modal component that guides the user through the AI-assisted board setup process.
+ * It handles image uploading (including drag-and-drop), triggers the Gemini Vision
+ * API analysis, and displays the results, including module placement suggestions
+ * and strategic tips.
+ *
+ * @param {Props} props - The props for the component.
+ * @returns {JSX.Element} The rendered board setup modal.
+ */
 const BoardSetupModal: React.FC<Props> = ({ difficulty, onSetupComplete }) => {
-  const [boardImage, setBoardImage] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [analysis, setAnalysis] = useState<BoardAnalysis | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  /** State to hold the uploaded board image file. */
+  const [boardImage, setBoardImage] = useState<File | null>(null);
+  /** State for the URL of the image preview. */
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  /** State to track if the AI analysis is in progress. */
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  /** State to store the results of the board analysis. */
+  const [analysis, setAnalysis] = useState<BoardAnalysis | null>(null);
+  /** State to manage and display error messages. */
+  const [error, setError] = useState<string | null>(null);
+  /** State to track when a dragged file is over the drop zone. */
+  const [isDragOver, setIsDragOver] = useState(false);
+  /** A ref to the hidden file input element. */
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * Handles the selection of a file, validates it, and updates the component's state.
+   * @param {File} file - The selected file.
+   */
   const handleFileSelect = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      setError('Please select an image file')
-      return
+      setError('Please select an image file');
+      return;
     }
 
-    setBoardImage(file)
-    setPreviewUrl(URL.createObjectURL(file))
-    setError(null)
-    setAnalysis(null)
-  }
+    setBoardImage(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setError(null);
+    setAnalysis(null);
+  };
 
+  /**
+   * Handles the drag-over event for the drop zone.
+   * @param {React.DragEvent} e - The drag event.
+   */
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }
+    e.preventDefault();
+    setIsDragOver(true);
+  };
 
+  /**
+   * Handles the drag-leave event for the drop zone.
+   * @param {React.DragEvent} e - The drag event.
+   */
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }
+    e.preventDefault();
+    setIsDragOver(false);
+  };
 
+  /**
+   * Handles the drop event, extracting the file and passing it to the selection handler.
+   * @param {React.DragEvent} e - The drop event.
+   */
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) {
-      handleFileSelect(files[0])
-    }
-  }
+    e.preventDefault();
+    setIsDragOver(false);
 
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  /**
+   * Handles file selection from the hidden file input element.
+   * @param {React.ChangeEvent<HTMLInputElement>} e - The change event.
+   */
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
+    const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      handleFileSelect(files[0])
+      handleFileSelect(files[0]);
     }
-  }
+  };
 
+  /**
+   * Initiates the AI board analysis process by calling the Gemini Vision API.
+   * Manages the `isAnalyzing` state and handles potential errors.
+   */
   const analyzeBoard = async () => {
-    if (!boardImage) return
+    if (!boardImage) return;
 
-    setIsAnalyzing(true)
-    setError(null)
+    setIsAnalyzing(true);
+    setError(null);
 
     try {
-      const result = await analyzeBoardImage(boardImage, difficulty)
-      setAnalysis(result)
+      const result = await analyzeBoardImage(boardImage, difficulty);
+      setAnalysis(result);
     } catch (err) {
-      setError('Failed to analyze board. Please try again.')
-      console.error('Analysis error:', err)
+      setError('Failed to analyze board. Please try again.');
+      console.error('Analysis error:', err);
     } finally {
-      setIsAnalyzing(false)
+      setIsAnalyzing(false);
     }
-  }
+  };
 
+  /**
+   * Finalizes the setup process by invoking the `onSetupComplete` callback
+   * after a successful analysis.
+   */
   const handleComplete = () => {
     if (analysis) {
-      onSetupComplete()
+      onSetupComplete();
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-kopi-50 via-white to-talk-50">

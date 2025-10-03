@@ -7,25 +7,50 @@ import FamilySetup from '../components/FamilySetup'
 import BoardSetupModal from '../components/BoardSetupModal'
 import GameplayInterface from '../components/GameplayInterface'
 
+/**
+ * @file This component acts as the main controller for a board game session.
+ * It functions as a state machine, managing the game's progression through
+ * different phases: family setup, board setup, and active gameplay.
+ */
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { gameStorage } from '../utils/gameStorage';
+import { GameSession } from '../types';
+import FamilySetup from '../components/FamilySetup';
+import BoardSetupModal from '../components/BoardSetupModal';
+import GameplayInterface from '../components/GameplayInterface';
+
+/**
+ * The BoardGame component orchestrates the entire lifecycle of a game.
+ * It loads a session based on the URL, or initializes a new one. It then
+ * renders the appropriate UI component based on the current `game_phase`.
+ *
+ * @returns {JSX.Element} The rendered component for the current game phase.
+ */
 const BoardGame: React.FC = () => {
-  const { sessionId } = useParams()
-  const navigate = useNavigate()
-  const [gameSession, setGameSession] = useState<GameSession | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { sessionId } = useParams();
+  const navigate = useNavigate();
+  /** State for the current game session object. */
+  const [gameSession, setGameSession] = useState<GameSession | null>(null);
+  /** State to manage the initial loading process. */
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (sessionId) {
-      // Load existing game
-      const game = gameStorage.getGame(sessionId)
+      // Load an existing game from storage.
+      const game = gameStorage.getGame(sessionId);
       if (game) {
-        setGameSession(game)
+        setGameSession(game);
       } else {
-        // Game not found, redirect to home
-        navigate('/')
-        return
+        // If no game is found for the ID, redirect to the home page.
+        navigate('/');
+        return;
       }
     } else {
-      // Create new game - start with family setup
+      // If no session ID is present, initialize a new game session object
+      // starting at the 'family_setup' phase.
       setGameSession({
         id: `game_${Date.now()}`,
         difficulty: 'medium',
@@ -35,30 +60,42 @@ const BoardGame: React.FC = () => {
         current_player_index: 0,
         game_scenario: null,
         created_date: new Date().toISOString(),
-        last_updated: new Date().toISOString()
-      })
+        last_updated: new Date().toISOString(),
+      });
     }
-    setLoading(false)
-  }, [sessionId, navigate])
+    setLoading(false);
+  }, [sessionId, navigate]);
 
+  /**
+   * Updates the game session state, saves it to local storage, and handles
+   * URL updates for newly created games.
+   * @param {Partial<GameSession>} updates - An object containing the properties of the game session to update.
+   */
   const updateGameSession = (updates: Partial<GameSession>) => {
-    if (!gameSession) return
-    
+    if (!gameSession) return;
+
     const updatedGame = {
       ...gameSession,
       ...updates,
-      last_updated: new Date().toISOString()
-    }
-    
-    setGameSession(updatedGame)
-    gameStorage.saveGame(updatedGame)
-    
-    // Update URL if we just created a new game
-    if (!sessionId && updatedGame.id) {
-      navigate(`/game/${updatedGame.id}`, { replace: true })
-    }
-  }
+      last_updated: new Date().toISOString(),
+    };
 
+    setGameSession(updatedGame);
+    gameStorage.saveGame(updatedGame);
+
+    // If this is a new game, update the URL to include its new session ID.
+    if (!sessionId && updatedGame.id) {
+      navigate(`/game/${updatedGame.id}`, { replace: true });
+    }
+  };
+
+  /**
+   * Handles the completion of the family setup phase. It updates the game session
+   * with the selected difficulty and player information, and transitions the game
+   * to the 'board_setup' phase.
+   * @param {string} difficulty - The chosen difficulty level.
+   * @param {any[]} players - The array of configured players.
+   */
   const handleFamilySetupComplete = (difficulty: string, players: any[]) => {
     const budgetMap: Record<string, number> = {
       easy: 0,
@@ -82,11 +119,15 @@ const BoardGame: React.FC = () => {
     })
   }
 
+  /**
+   * Handles the completion of the board setup phase. Transitions the game
+   * to the 'gameplay' phase.
+   */
   const handleBoardSetupComplete = () => {
     updateGameSession({
-      game_phase: 'gameplay'
-    })
-  }
+      game_phase: 'gameplay',
+    });
+  };
 
   if (loading) {
     return (

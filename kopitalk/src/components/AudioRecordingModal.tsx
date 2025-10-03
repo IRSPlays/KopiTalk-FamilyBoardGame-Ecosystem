@@ -3,166 +3,201 @@ import { Mic, MicOff, Play, Pause, Upload, X, Volume2 } from 'lucide-react'
 import { useReactMediaRecorder } from 'react-media-recorder'
 import { analyzeConversation, ConversationAnalysis } from '../utils/geminiApi'
 
+/**
+ * Props for the AudioRecordingModal component.
+ */
 interface Props {
-  isOpen: boolean
-  onClose: () => void
-  onAnalysisComplete: (result: ConversationAnalysis) => void
+  /** A boolean to control the visibility of the modal. */
+  isOpen: boolean;
+  /** A callback function to close the modal. */
+  onClose: () => void;
+  /** A callback function that is invoked when the audio analysis is complete. */
+  onAnalysisComplete: (result: ConversationAnalysis) => void;
 }
 
+/**
+ * A modal component for recording, previewing, and analyzing audio conversations.
+ * It uses `react-media-recorder` to handle the recording logic and integrates
+ * with the Gemini API for analysis.
+ *
+ * @param {Props} props - The props for the component.
+ * @returns {JSX.Element | null} The rendered modal, or null if it is not open.
+ */
 const AudioRecordingModal: React.FC<Props> = ({ isOpen, onClose, onAnalysisComplete }) => {
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [recordingTime, setRecordingTime] = useState(0)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  /** State to manage the playback of the recorded audio. */
+  const [isPlaying, setIsPlaying] = useState(false);
+  /** State to track the elapsed time of the current recording. */
+  const [recordingTime, setRecordingTime] = useState(0);
+  /** State to indicate when the analysis is in progress. */
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const {
-    status,
-    startRecording,
-    stopRecording,
-    mediaBlobUrl,
-    clearBlobUrl,
-    error
-  } = useReactMediaRecorder({
+  /** A ref to the HTMLAudioElement for playing the recording. */
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  /** A ref to the interval timer used to track recording duration. */
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  /**
+   * Hook `useReactMediaRecorder` to handle all the low-level recording logic.
+   * It provides status, control functions (start, stop), and the recorded media URL.
+   */
+  const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl, error } = useReactMediaRecorder({
     audio: {
       echoCancellation: true,
       noiseSuppression: true,
-      sampleRate: 44100
+      sampleRate: 44100,
     },
     blobPropertyBag: { type: 'audio/wav' },
     onStart: () => {
-      setRecordingTime(0)
+      setRecordingTime(0);
       timerRef.current = setInterval(() => {
-        setRecordingTime(prev => {
+        setRecordingTime((prev) => {
           if (prev >= 300) {
-            stopRecording()
-            return prev
+            // Auto-stop after 5 minutes
+            stopRecording();
+            return prev;
           }
-          return prev + 1
-        })
-      }, 1000)
+          return prev + 1;
+        });
+      }, 1000);
     },
     onStop: (blobUrl: string, blob: Blob) => {
       if (timerRef.current) {
-        clearInterval(timerRef.current)
+        clearInterval(timerRef.current);
       }
-      console.log('🎤 Audio recorded:', { 
-        size: Math.round(blob.size / 1024) + 'KB',
+      console.log('🎤 Audio recorded:', {
+        size: `${Math.round(blob.size / 1024)}KB`,
         type: blob.type,
-        duration: recordingTime + 's'
-      })
-    }
-  })
+        duration: `${recordingTime}s`,
+      });
+    },
+  });
 
+  /** Effect hook to clear the interval timer on component unmount. */
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [])
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
+  /** Effect hook to reset the modal's state when it is closed. */
   useEffect(() => {
     if (!isOpen) {
-      setIsPlaying(false)
-      setRecordingTime(0)
-      setIsAnalyzing(false)
-      if (timerRef.current) clearInterval(timerRef.current)
-      clearBlobUrl()
+      setIsPlaying(false);
+      setRecordingTime(0);
+      setIsAnalyzing(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+      clearBlobUrl();
     }
-  }, [isOpen, clearBlobUrl])
+  }, [isOpen, clearBlobUrl]);
 
+  /** Toggles playback of the recorded audio. */
   const playAudio = () => {
     if (mediaBlobUrl && audioRef.current) {
       if (isPlaying) {
-        audioRef.current.pause()
-        setIsPlaying(false)
+        audioRef.current.pause();
+        setIsPlaying(false);
       } else {
-        audioRef.current.src = mediaBlobUrl
-        audioRef.current.play()
-        setIsPlaying(true)
-        audioRef.current.onended = () => setIsPlaying(false)
+        audioRef.current.src = mediaBlobUrl;
+        audioRef.current.play();
+        setIsPlaying(true);
+        audioRef.current.onended = () => setIsPlaying(false);
       }
     }
-  }
+  };
 
+  /**
+   * Fetches the recorded audio blob and sends it to the Gemini API for analysis.
+   * Invokes the `onAnalysisComplete` callback with the result.
+   */
   const uploadForAnalysis = async () => {
-    if (!mediaBlobUrl) return
-    
-    setIsAnalyzing(true)
-    
+    if (!mediaBlobUrl) return;
+
+    setIsAnalyzing(true);
+
     try {
-      const response = await fetch(mediaBlobUrl)
-      const audioBlob = await response.blob()
-      
+      const response = await fetch(mediaBlobUrl);
+      const audioBlob = await response.blob();
+
       console.log('🔍 Analyzing conversation with Gemini...', {
-        size: Math.round(audioBlob.size / 1024) + 'KB',
-        duration: recordingTime + 's',
-        type: audioBlob.type
-      })
-      
-      const result = await analyzeConversation(audioBlob, recordingTime)
-      onAnalysisComplete(result)
-      onClose()
+        size: `${Math.round(audioBlob.size / 1024)}KB`,
+        duration: `${recordingTime}s`,
+        type: audioBlob.type,
+      });
+
+      const result = await analyzeConversation(audioBlob, recordingTime);
+      onAnalysisComplete(result);
+      onClose();
     } catch (error) {
-      console.error('❌ Gemini API analysis failed:', error)
-      
+      console.error('❌ Gemini API analysis failed:', error);
+
+      // Provide a fallback result if the API fails
       const fallbackResult: ConversationAnalysis = {
         quality: Math.floor(Math.random() * 40) + 60,
         movement: Math.floor(Math.random() * 3) + 1,
         earnings: 0,
-        feedback: "AI analysis temporarily unavailable. Your conversation shows great family bonding potential!",
-        topics_covered: ["family stories", "shared experiences"],
-        bonding_level: recordingTime > 60 ? 'high' : recordingTime > 30 ? 'medium' : 'low'
-      }
-      
-      onAnalysisComplete(fallbackResult)
-      onClose()
+        feedback: 'AI analysis temporarily unavailable. Your conversation shows great family bonding potential!',
+        topics_covered: ['family stories', 'shared experiences'],
+        bonding_level: recordingTime > 60 ? 'high' : recordingTime > 30 ? 'medium' : 'low',
+      };
+
+      onAnalysisComplete(fallbackResult);
+      onClose();
     } finally {
-      setIsAnalyzing(false)
+      setIsAnalyzing(false);
     }
-  }
+  };
 
+  /** Downloads the recorded audio file to the user's device. */
   const saveRecording = () => {
-    if (!mediaBlobUrl) return
+    if (!mediaBlobUrl) return;
     try {
-      const a = document.createElement('a')
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-      a.href = mediaBlobUrl
-      a.download = `kopitalk-recording-${timestamp}.wav`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      const a = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      a.href = mediaBlobUrl;
+      a.download = `kopitalk-recording-${timestamp}.wav`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } catch (e) {
-      console.error('Failed to save recording:', e)
+      console.error('Failed to save recording:', e);
     }
-  }
+  };
 
+  /**
+   * Formats a duration in seconds into a MM:SS string.
+   * @param {number} seconds - The duration in seconds.
+   * @returns {string} The formatted time string.
+   */
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
+  /**
+   * Provides a user-friendly message for the current recorder status.
+   * @returns {string} The status message.
+   */
   const getStatusMessage = () => {
     switch (status) {
       case 'idle':
-        return 'Ready to record'
+        return 'Ready to record';
       case 'acquiring_media':
-        return 'Getting microphone access...'
+        return 'Getting microphone access...';
       case 'recording':
-        return '🔴 RECORDING'
+        return '🔴 RECORDING';
       case 'stopping':
-        return 'Processing recording...'
+        return 'Processing recording...';
       case 'stopped':
-        return 'Recording complete'
+        return 'Recording complete';
       case 'permission_denied':
-        return 'Microphone access denied'
+        return 'Microphone access denied';
       case 'media_aborted':
-        return 'Recording aborted'
+        return 'Recording aborted';
       default:
-        return status
+        return status;
     }
-  }
+  };
 
   const isRecording = status === 'recording'
   const hasRecording = status === 'stopped' && mediaBlobUrl

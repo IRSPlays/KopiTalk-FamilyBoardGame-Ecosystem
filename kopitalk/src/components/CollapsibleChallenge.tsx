@@ -2,16 +2,34 @@ import React, { useState } from 'react'
 import { ChevronDown, ChevronUp, Clock, Trophy, Users, Star, CheckCircle, Play, AlertCircle } from 'lucide-react'
 import { Challenge, ChallengeRequirement } from '../types'
 
+/**
+ * Props for the CollapsibleChallenge component.
+ */
 interface CollapsibleChallengeProps {
-  challenge: Challenge
-  isCollapsed: boolean
-  onToggle: () => void
-  onStart?: () => void
-  onComplete?: () => void
-  onFail?: () => void
-  onRequirementUpdate?: (requirementIndex: number, completed: boolean) => void
+  /** The challenge object to display. */
+  challenge: Challenge;
+  /** A boolean to control the collapsed/expanded state of the component. */
+  isCollapsed: boolean;
+  /** A callback function to toggle the collapsed state. */
+  onToggle: () => void;
+  /** An optional callback to handle starting the challenge. */
+  onStart?: () => void;
+  /** An optional callback to handle completing the challenge. */
+  onComplete?: () => void;
+  /** An optional callback to handle failing or giving up on the challenge. */
+  onFail?: () => void;
+  /** An optional callback to notify the parent when a requirement's completion status changes. */
+  onRequirementUpdate?: (requirementIndex: number, completed: boolean) => void;
 }
 
+/**
+ * A UI component that displays a single challenge in a collapsible view.
+ * It shows a summary header and can be expanded to reveal detailed information
+ * about requirements, rewards, and actions.
+ *
+ * @param {CollapsibleChallengeProps} props - The props for the component.
+ * @returns {JSX.Element} The rendered collapsible challenge card.
+ */
 const CollapsibleChallenge: React.FC<CollapsibleChallengeProps> = ({
   challenge,
   isCollapsed,
@@ -19,51 +37,91 @@ const CollapsibleChallenge: React.FC<CollapsibleChallengeProps> = ({
   onStart,
   onComplete,
   onFail,
-  onRequirementUpdate
+  onRequirementUpdate,
 }) => {
-  const [localRequirements, setLocalRequirements] = useState<ChallengeRequirement[]>(
-    challenge.requirements || []
-  )
+  /**
+   * Local state to manage the completion status of the challenge requirements.
+   * This allows the component to handle UI interactions independently before
+   * notifying the parent component.
+   */
+  const [localRequirements, setLocalRequirements] = useState<ChallengeRequirement[]>(challenge.requirements || []);
 
+  /**
+   * Returns an emoji icon based on the challenge type.
+   * @param {string} type - The type of the challenge.
+   * @returns {string} An emoji representing the challenge type.
+   */
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'delivery': return '🚚'
-      case 'cooking': return '👨‍🍳'
-      case 'transport': return '🚌'
-      case 'tiktok': return '📱'
-      default: return '🎯'
+      case 'delivery':
+        return '🚚';
+      case 'cooking':
+        return '👨‍🍳';
+      case 'transport':
+        return '🚌';
+      case 'tiktok':
+        return '📱';
+      default:
+        return '🎯';
     }
-  }
+  };
 
+  /**
+   * Returns Tailwind CSS classes for styling a difficulty badge.
+   * @param {string} difficulty - The difficulty level of the challenge.
+   * @returns {string} The CSS classes for styling the badge.
+   */
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'text-green-600 bg-green-100'
-      case 'medium': return 'text-yellow-600 bg-yellow-100'
-      case 'hard': return 'text-red-600 bg-red-100'
-      default: return 'text-gray-600 bg-gray-100'
+      case 'easy':
+        return 'text-green-600 bg-green-100';
+      case 'medium':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'hard':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
-  }
+  };
 
+  /**
+   * Returns Tailwind CSS classes for styling a status badge.
+   * @param {string} status - The current status of the challenge.
+   * @returns {string} The CSS classes for styling the badge.
+   */
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'text-gray-600 bg-gray-100'
-      case 'active': return 'text-blue-600 bg-blue-100'
-      case 'completed': return 'text-green-600 bg-green-100'
-      case 'failed': return 'text-red-600 bg-red-100'
-      default: return 'text-gray-600 bg-gray-100'
+      case 'pending':
+        return 'text-gray-600 bg-gray-100';
+      case 'active':
+        return 'text-blue-600 bg-blue-100';
+      case 'completed':
+        return 'text-green-600 bg-green-100';
+      case 'failed':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
-  }
+  };
 
+  /**
+   * Toggles the completion status of a requirement in the local state and
+   * calls the `onRequirementUpdate` callback to notify the parent.
+   * @param {number} index - The index of the requirement to toggle.
+   */
   const handleRequirementToggle = (index: number) => {
-    const updated = [...localRequirements]
-    updated[index].completed = !updated[index].completed
-    setLocalRequirements(updated)
-    onRequirementUpdate?.(index, updated[index].completed)
-  }
+    const updated = [...localRequirements];
+    updated[index].completed = !updated[index].completed;
+    setLocalRequirements(updated);
+    onRequirementUpdate?.(index, updated[index].completed);
+  };
 
-  const completedRequirements = localRequirements.filter(req => req.completed).length
-  const totalRequirements = localRequirements.length
-  const progressPercentage = totalRequirements > 0 ? (completedRequirements / totalRequirements) * 100 : 0
+  /** The number of requirements that have been completed. */
+  const completedRequirements = localRequirements.filter((req) => req.completed).length;
+  /** The total number of requirements for the challenge. */
+  const totalRequirements = localRequirements.length;
+  /** The completion progress of the challenge as a percentage. */
+  const progressPercentage = totalRequirements > 0 ? (completedRequirements / totalRequirements) * 100 : 0;
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">

@@ -16,51 +16,90 @@ try {
 // Use Gemini 2.5 Flash model exclusively
 const MODEL = 'gemini-2.5-flash'
 
+/**
+ * Represents a single suggestion for placing a module on the game board.
+ */
 export interface ModuleSuggestion {
-  module_type: string
-  placement: string
-  reason: string
-  priority: 'high' | 'medium' | 'low'
+  /** The type of game module (e.g., 'market', 'station'). */
+  module_type: string;
+  /** The recommended placement location on the board. */
+  placement: string;
+  /** The justification for the suggested placement. */
+  reason: string;
+  /** The priority level for placing this module. */
+  priority: 'high' | 'medium' | 'low';
 }
 
+/**
+ * Represents the complete analysis of a game board image, including setup
+ * recommendations and strategic advice.
+ */
 export interface BoardAnalysis {
-  board_assessment: string
-  complexity: 'simple' | 'moderate' | 'complex'
-  family_friendly: boolean
-  module_suggestions: ModuleSuggestion[]
-  strategic_tips: string[]
-  estimated_game_time: string
+  /** A general assessment of the board's layout and features. */
+  board_assessment: string;
+  /** The assessed complexity of the board setup. */
+  complexity: 'simple' | 'moderate' | 'complex';
+  /** A flag indicating if the setup is considered family-friendly. */
+  family_friendly: boolean;
+  /** An array of suggestions for placing game modules. */
+  module_suggestions: ModuleSuggestion[];
+  /** A list of strategic tips for playing on the analyzed board. */
+  strategic_tips: string[];
+  /** An estimated duration for a game session on this board. */
+  estimated_game_time: string;
 }
 
+/**
+ * Defines the structure of a dynamic in-game challenge, including its effects,
+ * duration, and resolution options.
+ */
 export interface GameChallenge {
-  id: string
-  type: 'weather' | 'delivery' | 'market' | 'family' | 'transport' | 'special'
-  title: string
-  description: string
+  /** A unique identifier for the challenge. */
+  id: string;
+  /** The category of the challenge. */
+  type: 'weather' | 'delivery' | 'market' | 'family' | 'transport' | 'special';
+  /** The title of the challenge. */
+  title: string;
+  /** A detailed description of the challenge and its context. */
+  description: string;
+  /** An object detailing the mechanical effects of the challenge on the game. */
   effects: {
-    market_closures?: string[]
-    delivery_delays?: number
-    price_changes?: { [key: string]: number }
-    movement_restrictions?: boolean
-    family_bonus?: boolean
-    special_rules?: string[]
-  }
-  duration_turns?: number
-  difficulty_modifier: number
-  family_impact: string
+    market_closures?: string[];
+    delivery_delays?: number;
+    price_changes?: { [key: string]: number };
+    movement_restrictions?: boolean;
+    family_bonus?: boolean;
+    special_rules?: string[];
+  };
+  /** The duration of the challenge in game turns. */
+  duration_turns?: number;
+  /** A modifier that can affect the difficulty of this or other challenges. */
+  difficulty_modifier: number;
+  /** A description of how the challenge specifically impacts family dynamics. */
+  family_impact: string;
+  /** An array of actions the players can take to resolve or mitigate the challenge. */
   resolution_options: Array<{
-    action: string
-    cost?: number
-    benefit?: string
-    family_cooperation_required: boolean
-  }>
+    action: string;
+    cost?: number;
+    benefit?: string;
+    family_cooperation_required: boolean;
+  }>;
 }
 
+/**
+ * Analyzes a game board image using the Gemini Vision API to provide setup
+ * suggestions and strategic tips tailored to family gameplay.
+ *
+ * @param {File} imageFile - The image of the game board to be analyzed.
+ * @param {string} difficulty - The selected difficulty level for the game.
+ * @returns {Promise<BoardAnalysis>} A promise that resolves to a detailed board analysis object.
+ *                                  Returns a fallback analysis on error.
+ */
 export const analyzeBoardImage = async (imageFile: File, difficulty: string): Promise<BoardAnalysis> => {
   try {
     if (!ai) {
-      console.error('❌ Gemini Vision API not initialized')
-      return generateFallbackAnalysis(difficulty)
+      console.error('❌ Gemini Vision API not initialized');
+      return generateFallbackAnalysis(difficulty);
     }
 
     console.log('🖼️ Analyzing board image with Gemini 2.5-flash Vision...', {
@@ -162,11 +201,23 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
   }
 }
 
+/**
+ * Generates a predefined, fallback board analysis based on the selected difficulty.
+ * This is used when the Gemini API call fails, ensuring the game setup can proceed.
+ *
+ * @param {string} difficulty - The selected game difficulty.
+ * @returns {BoardAnalysis} A fallback board analysis object with predefined suggestions.
+ */
 const generateFallbackAnalysis = (difficulty: string): BoardAnalysis => {
   const difficultyMap = {
-    'Easy': {
+    Easy: {
       modules: [
-        { module_type: 'Central Market Hub', placement: 'Center of board for easy family access', reason: 'Central location ensures all generations can reach easily', priority: 'high' as const },
+        {
+          module_type: 'Central Market Hub',
+          placement: 'Center of board for easy family access',
+          reason: 'Central location ensures all generations can reach easily',
+          priority: 'high' as const,
+        },
         { module_type: 'Family Rest Area', placement: 'Corner near starting positions', reason: 'Provides comfortable space for elderly family members', priority: 'high' as const },
         { module_type: 'Simple Trading Post', placement: 'Midway between start and center', reason: 'Easy first trading experience for beginners', priority: 'medium' as const }
       ],
@@ -235,11 +286,20 @@ const generateFallbackAnalysis = (difficulty: string): BoardAnalysis => {
   }
 }
 
+/**
+ * Generates a dynamic in-game challenge using the Gemini API based on the
+ * current game state and difficulty.
+ *
+ * @param {string} difficulty - The current game difficulty.
+ * @param {any} currentGameState - An object representing the current state of the game.
+ * @returns {Promise<GameChallenge>} A promise that resolves to a new game challenge object.
+ *                                   Returns a fallback challenge on error.
+ */
 export const generateGameChallenge = async (difficulty: string, currentGameState: any): Promise<GameChallenge> => {
   try {
     if (!ai) {
-      console.error('❌ Gemini Vision API not initialized')
-      return generateFallbackChallenge(difficulty)
+      console.error('❌ Gemini Vision API not initialized');
+      return generateFallbackChallenge(difficulty);
     }
 
     console.log('🎲 Generating game challenge with Gemini 2.5-flash...', {
@@ -322,6 +382,13 @@ export const generateGameChallenge = async (difficulty: string, currentGameState
   }
 }
 
+/**
+ * Generates a predefined, random fallback game challenge based on the selected difficulty.
+ * This ensures gameplay can continue even if the Gemini API fails.
+ *
+ * @param {string} difficulty - The selected game difficulty.
+ * @returns {GameChallenge} A fallback game challenge object with scaled effects.
+ */
 const generateFallbackChallenge = (difficulty: string): GameChallenge => {
   const challenges = [
     {

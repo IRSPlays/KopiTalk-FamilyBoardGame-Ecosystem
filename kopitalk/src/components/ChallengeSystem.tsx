@@ -7,56 +7,115 @@ import {
   Bus, CreditCard, MapPin, Sparkles, DollarSign, ArrowRight
 } from 'lucide-react'
 
+/**
+ * Represents a single in-game challenge with all its properties and state.
+ */
 export interface Challenge {
-  id: string
-  type: 'delivery' | 'cooking' | 'transport' | 'general' | 'tiktok' | 'family'
-  phase: 'pre_game' | 'during_game' | 'post_game'
-  title: string
-  description: string
-  culturalContext: string
-  requirements: ChallengeRequirement[]
-  rewards: ChallengeReward
-  timeLimit?: number
-  difficultyLevel: 'easy' | 'medium' | 'hard' | 'expert'
-  familyCooperationRequired: boolean
-  status: 'available' | 'active' | 'completed' | 'failed'
-  progress: number
-  completedBy?: string[]
-  startedAt?: string
-  completedAt?: string
+  /** A unique identifier for the challenge. */
+  id: string;
+  /** The category of the challenge. */
+  type: 'delivery' | 'cooking' | 'transport' | 'general' | 'tiktok' | 'family';
+  /** The game phase during which this challenge is available. */
+  phase: 'pre_game' | 'during_game' | 'post_game';
+  /** The title of the challenge. */
+  title: string;
+  /** A detailed description of the challenge's objectives. */
+  description: string;
+  /** Text explaining the challenge's relevance to Singaporean culture. */
+  culturalContext: string;
+  /** An array of specific tasks required to complete the challenge. */
+  requirements: ChallengeRequirement[];
+  /** The rewards granted upon completion. */
+  rewards: ChallengeReward;
+  /** An optional time limit in seconds. */
+  timeLimit?: number;
+  /** The difficulty level of the challenge. */
+  difficultyLevel: 'easy' | 'medium' | 'hard' | 'expert';
+  /** A flag indicating if multiple players must cooperate. */
+  familyCooperationRequired: boolean;
+  /** The current status of the challenge. */
+  status: 'available' | 'active' | 'completed' | 'failed';
+  /** The completion progress of the challenge, as a percentage. */
+  progress: number;
+  /** A list of player names who completed the challenge. */
+  completedBy?: string[];
+  /** The timestamp when the challenge was started. */
+  startedAt?: string;
+  /** The timestamp when the challenge was completed. */
+  completedAt?: string;
 }
 
+/**
+ * Represents a single requirement or task within a challenge.
+ */
 interface ChallengeRequirement {
-  type: 'ingredient' | 'location' | 'action' | 'time' | 'money' | 'conversation' | 'video'
-  description: string
-  target: string | number
-  completed: boolean
-  progress?: number
+  /** The type of action or item required. */
+  type: 'ingredient' | 'location' | 'action' | 'time' | 'money' | 'conversation' | 'video';
+  /** A description of the requirement. */
+  description: string;
+  /** The target value or state needed to fulfill the requirement. */
+  target: string | number;
+  /** A flag indicating if this requirement has been met. */
+  completed: boolean;
+  /** The current progress towards the target, if applicable. */
+  progress?: number;
 }
 
+/**
+ * Defines the structure of rewards given for completing a challenge.
+ */
 interface ChallengeReward {
-  money: number
-  points: number
-  movement: number
-  skills: string[]
-  culturalKnowledge: number
-  familyBondingBonus: number
-  specialUnlocks?: string[]
+  /** The amount of in-game money awarded. */
+  money: number;
+  /** The number of points awarded. */
+  points: number;
+  /** The number of bonus spaces to move on the board. */
+  movement: number;
+  /** A list of skills improved or acquired. */
+  skills: string[];
+  /** The amount of cultural knowledge points gained. */
+  culturalKnowledge: number;
+  /** A bonus score for family bonding. */
+  familyBondingBonus: number;
+  /** A list of any special features or items unlocked. */
+  specialUnlocks?: string[];
 }
 
+/**
+ * Props for the ChallengeSystem component.
+ */
 interface Props {
-  gameSession: GameSession
-  onUpdateGame: (updates: Partial<GameSession>) => void
-  onCompleteChallenge: (challengeId: string, rewards: ChallengeReward) => void
+  /** The current game session data. */
+  gameSession: GameSession;
+  /** A callback function to update the main game session state. */
+  onUpdateGame: (updates: Partial<GameSession>) => void;
+  /** A callback invoked when a challenge is successfully completed. */
+  onCompleteChallenge: (challengeId: string, rewards: ChallengeReward) => void;
 }
 
+/**
+ * A component that manages the lifecycle of in-game challenges, including their
+ * generation, activation, progress tracking, and completion.
+ *
+ * @param {Props} props - The props for the component.
+ * @returns {JSX.Element} The rendered challenge system UI.
+ */
 const ChallengeSystem: React.FC<Props> = ({ gameSession, onUpdateGame, onCompleteChallenge }) => {
-  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
-  const [availableChallenges, setAvailableChallenges] = useState<Challenge[]>([])
-  const [completedChallenges, setCompletedChallenges] = useState<Challenge[]>([])
-  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null)
+  /** State to hold the list of challenges currently in progress. */
+  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([]);
+  /** State for challenges that are available to be started. */
+  const [availableChallenges, setAvailableChallenges] = useState<Challenge[]>([]);
+  /** State for challenges that have been successfully completed. */
+  const [completedChallenges, setCompletedChallenges] = useState<Challenge[]>([]);
+  /** State to hold the currently selected challenge for detailed view. */
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
-  // Generate dynamic challenges based on game state and Singapore culture
+  /**
+   * Generates a static list of predefined challenges for the game.
+   * In a real application, this might fetch challenges from a server or use a more
+   * dynamic generation algorithm.
+   * @returns {Challenge[]} An array of challenge objects.
+   */
   const generateChallenges = (): Challenge[] => {
     const challenges: Challenge[] = [
       // Delivery Challenges
@@ -233,85 +292,131 @@ const ChallengeSystem: React.FC<Props> = ({ gameSession, onUpdateGame, onComplet
     return challenges
   }
 
+  /**
+   * Effect hook to generate the list of available challenges when the component
+   * mounts or the game session changes.
+   */
   useEffect(() => {
-    const challenges = generateChallenges()
-    setAvailableChallenges(challenges.filter(c => c.status === 'available'))
-  }, [gameSession])
+    const challenges = generateChallenges();
+    setAvailableChallenges(challenges.filter((c) => c.status === 'available'));
+  }, [gameSession]);
 
+  /**
+   * Starts a challenge, moving it from the available list to the active list.
+   * @param {Challenge} challenge - The challenge object to start.
+   */
   const startChallenge = (challenge: Challenge) => {
     const updatedChallenge = {
       ...challenge,
       status: 'active' as const,
-      startedAt: new Date().toISOString()
-    }
-    
-    setActiveChallenges(prev => [...prev, updatedChallenge])
-    setAvailableChallenges(prev => prev.filter(c => c.id !== challenge.id))
-    setSelectedChallenge(updatedChallenge)
-  }
+      startedAt: new Date().toISOString(),
+    };
 
+    setActiveChallenges((prev) => [...prev, updatedChallenge]);
+    setAvailableChallenges((prev) => prev.filter((c) => c.id !== challenge.id));
+    setSelectedChallenge(updatedChallenge);
+  };
+
+  /**
+   * Updates the progress of a specific requirement within an active challenge.
+   * It recalculates the overall challenge progress based on completed requirements.
+   * @param {string} challengeId - The ID of the challenge to update.
+   * @param {number} requirementIndex - The index of the requirement to update.
+   * @param {boolean | number} progress - The new progress value (boolean for completion, number for partial progress).
+   */
   const updateChallengeProgress = (challengeId: string, requirementIndex: number, progress: boolean | number) => {
-    setActiveChallenges(prev => prev.map(challenge => {
-      if (challenge.id !== challengeId) return challenge
-      
-      const updatedRequirements = [...challenge.requirements]
-      if (typeof progress === 'boolean') {
-        updatedRequirements[requirementIndex].completed = progress
-      } else {
-        updatedRequirements[requirementIndex].progress = progress
-        updatedRequirements[requirementIndex].completed = progress >= (updatedRequirements[requirementIndex].target as number)
-      }
-      
-      const overallProgress = updatedRequirements.filter(r => r.completed).length / updatedRequirements.length * 100
-      
-      return {
-        ...challenge,
-        requirements: updatedRequirements,
-        progress: overallProgress
-      }
-    }))
-  }
+    setActiveChallenges((prev) =>
+      prev.map((challenge) => {
+        if (challenge.id !== challengeId) return challenge;
 
+        const updatedRequirements = [...challenge.requirements];
+        if (typeof progress === 'boolean') {
+          updatedRequirements[requirementIndex].completed = progress;
+        } else {
+          updatedRequirements[requirementIndex].progress = progress;
+          updatedRequirements[requirementIndex].completed =
+            progress >= (updatedRequirements[requirementIndex].target as number);
+        }
+
+        const overallProgress = (updatedRequirements.filter((r) => r.completed).length / updatedRequirements.length) * 100;
+
+        return {
+          ...challenge,
+          requirements: updatedRequirements,
+          progress: overallProgress,
+        };
+      }),
+    );
+  };
+
+  /**
+   * Marks a challenge as complete, moves it to the completed list, and triggers
+   * the `onCompleteChallenge` callback to grant rewards.
+   * @param {string} challengeId - The ID of the challenge to complete.
+   */
   const completeChallenge = (challengeId: string) => {
-    const challenge = activeChallenges.find(c => c.id === challengeId)
-    if (!challenge) return
+    const challenge = activeChallenges.find((c) => c.id === challengeId);
+    if (!challenge) return;
 
     const completedChallenge = {
       ...challenge,
       status: 'completed' as const,
       completedAt: new Date().toISOString(),
-      completedBy: gameSession.family_members.map(m => m.name)
-    }
+      completedBy: gameSession.family_members.map((m) => m.name),
+    };
 
-    setActiveChallenges(prev => prev.filter(c => c.id !== challengeId))
-    setCompletedChallenges(prev => [...prev, completedChallenge])
-    
-    onCompleteChallenge(challengeId, challenge.rewards)
-    
+    setActiveChallenges((prev) => prev.filter((c) => c.id !== challengeId));
+    setCompletedChallenges((prev) => [...prev, completedChallenge]);
+
+    onCompleteChallenge(challengeId, challenge.rewards);
+
     // Show completion notification
-    alert(`🎉 Challenge Complete!\n\n"${challenge.title}"\n\n🏆 Rewards:\n💰 $${challenge.rewards.money}\n⭐ ${challenge.rewards.points} points\n🚀 +${challenge.rewards.movement} spaces\n📚 Skills: ${challenge.rewards.skills.join(', ')}\n🏛️ Cultural Knowledge: +${challenge.rewards.culturalKnowledge}%\n❤️ Family Bonding: +${challenge.rewards.familyBondingBonus}`)
-  }
+    alert(
+      `🎉 Challenge Complete!\n\n"${challenge.title}"\n\n🏆 Rewards:\n💰 $${challenge.rewards.money}\n⭐ ${challenge.rewards.points} points\n🚀 +${challenge.rewards.movement} spaces\n📚 Skills: ${challenge.rewards.skills.join(', ')}\n🏛️ Cultural Knowledge: +${challenge.rewards.culturalKnowledge}%\n❤️ Family Bonding: +${challenge.rewards.familyBondingBonus}`,
+    );
+  };
 
+  /**
+   * Returns the appropriate Lucide icon component for a given challenge type.
+   * @param {Challenge['type']} type - The type of the challenge.
+   * @returns {React.ElementType} The corresponding icon component.
+   */
   const getChallengeTypeIcon = (type: Challenge['type']) => {
     switch (type) {
-      case 'delivery': return Package
-      case 'cooking': return ChefHat
-      case 'transport': return Bus
-      case 'tiktok': return Star
-      case 'family': return Heart
-      default: return Trophy
+      case 'delivery':
+        return Package;
+      case 'cooking':
+        return ChefHat;
+      case 'transport':
+        return Bus;
+      case 'tiktok':
+        return Star;
+      case 'family':
+        return Heart;
+      default:
+        return Trophy;
     }
-  }
+  };
 
+  /**
+   * Returns Tailwind CSS classes for styling a difficulty badge.
+   * @param {string} difficulty - The difficulty level of the challenge.
+   * @returns {string} The CSS classes for styling the badge.
+   */
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-700 border-green-300'
-      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'hard': return 'bg-orange-100 text-orange-700 border-orange-300'
-      case 'expert': return 'bg-red-100 text-red-700 border-red-300'
-      default: return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'easy':
+        return 'bg-green-100 text-green-700 border-green-300';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+      case 'hard':
+        return 'bg-orange-100 text-orange-700 border-orange-300';
+      case 'expert':
+        return 'bg-red-100 text-red-700 border-red-300';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-300';
     }
-  }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">

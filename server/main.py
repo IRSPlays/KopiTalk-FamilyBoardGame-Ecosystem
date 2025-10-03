@@ -43,6 +43,22 @@ logger.info(f"google-generativeai version: {genai_ver}")
 templates = Jinja2Templates(directory="templates")
 
 def _downscale(image: Image.Image, max_side: int = 1024) -> Image.Image:
+    """Downscales an image if its largest dimension exceeds a maximum size.
+
+    This function maintains the aspect ratio of the image. If the image is
+    smaller than the maximum size, it is returned unchanged. If an error
+    occurs during downscaling, a warning is logged, and the original image
+    is returned.
+
+    Args:
+        image: The PIL Image object to downscale.
+        max_side: The maximum length of the longest side of the image.
+            Defaults to 1024.
+
+    Returns:
+        The downscaled PIL Image, or the original image if it was not
+        downscaled or if an error occurred.
+    """
     try:
         w, h = image.size
         scale = max(w, h) / float(max_side)
@@ -61,19 +77,48 @@ game_states: Dict[str, Dict] = {}
 
 # --- Pydantic Models for API Structure ---
 class ProcessTurnResponse(BaseModel):
-    """Defines the successful response structure for the process_turn endpoint."""
+    """Defines the successful response for the process_turn endpoint.
+
+    Attributes:
+        status: A string indicating the outcome, typically "success".
+        model_used: The name of the generative model that processed the turn.
+        processed_data: A dictionary containing the structured data extracted
+            from the game state analysis.
+    """
     status: str = "success"
     model_used: str
     processed_data: Dict
 
 class ErrorDetail(BaseModel):
-    """Defines a structured error response."""
+    """Defines a structured error response for API endpoints.
+
+    Attributes:
+        error: A short, high-level description of the error type.
+        reason: A more detailed explanation of what caused the error.
+        note: An optional field for additional context or guidance.
+    """
     error: str
     reason: str
     note: Optional[str] = None
 
 @app.post("/esp32/submit-image")
 async def submit_image(request: Request, esp32_id: str):
+    """Receives and stores an image from a specific ESP32 device.
+
+    This endpoint accepts raw image data (expected to be JPEG) in the request
+    body. It updates the device's status to 'online', records the time of the
+    submission, and stores the image in memory for later processing.
+
+    Args:
+        request: The incoming FastAPI Request object, used to access the body.
+        esp32_id: The unique identifier for the ESP32 device sending the image.
+
+    Returns:
+        A JSON object confirming the successful receipt of the image.
+
+    Raises:
+        HTTPException: If the request body is empty.
+    """
     image_bytes = await request.body()
     if not image_bytes:
         raise HTTPException(status_code=400, detail="No image data received.")
@@ -98,6 +143,25 @@ async def submit_image(request: Request, esp32_id: str):
     responses={500: {"model": ErrorDetail}, 404: {"model": ErrorDetail}}
 )
 async def process_turn(esp32_id: str, game_session_id: str, character_image: UploadFile = File(...)):
+    """Processes a game turn by analyzing a board and character image.
+
+    This endpoint orchestrates a single turn of the game. It retrieves the
+    latest board image from the specified ESP32, accepts a character image
+    upload, and sends both to a generative AI model for analysis. The model
+    identifies the positions of key modules and the character piece on the
+    board.
+
+    Args:
+        esp32_id: The identifier for the ESP32 device providing the board image.
+        game_session_id: The unique identifier for the current game session.
+        character_image: An uploaded file containing the image of the character
+            piece to be located on the board.
+
+    Returns:
+        A `ProcessTurnResponse` object containing the analysis results if
+        successful. On failure, it returns a `JSONResponse` with an
+        `ErrorDetail` model.
+    """
     if esp32_id not in latest_images:
         detail = {"error": "Not Found", "reason": f"No recent image found for ESP32 with ID: {esp32_id}."}
         return JSONResponse(status_code=404, content=detail)
@@ -160,6 +224,14 @@ async def process_turn(esp32_id: str, game_session_id: str, character_image: Upl
         gen_config = {"response_mime_type": "application/json"}
 
         def _call_model(active_model_name: str):
+            """Calls the generative AI model with a given model name.
+
+            Args:
+                active_model_name: The name of the model to use for the call.
+
+            Returns:
+                The response from the generative model.
+            """
             active_model = genai.GenerativeModel(active_model_name)
             return active_model.generate_content(
                 [
@@ -191,6 +263,23 @@ async def process_turn(esp32_id: str, game_session_id: str, character_image: Upl
             logger.warning("Could not determine response text length.")
 
         def _extract_json(text: str):
+            """Extracts a JSON object from a string, handling common LLM response formats.
+
+            This function attempts to parse JSON directly, then falls back to
+            stripping markdown code fences (e.g., ```json ... ```). If that
+            fails, it heuristically searches for the first '{' and last '}'
+            to extract a potential JSON object.
+
+            Args:
+                text: The input string, potentially containing a JSON object.
+
+            Returns:
+                The parsed JSON object as a dictionary or list.
+
+            Raises:
+                ValueError: If the text is empty or if a valid JSON object
+                    cannot be located or parsed.
+            """
             if not text:
                 raise ValueError("Empty response text")
             t = text.strip()
@@ -236,6 +325,17 @@ async def process_turn(esp32_id: str, game_session_id: str, character_image: Upl
 
 @app.get("/admin/status")
 async def get_admin_status():
+    """Provides the current status of all connected ESP32 devices.
+
+    This function checks the last seen time for each registered ESP32. If a
+    device has not sent an image within a 30-second window, its status is
+    marked as 'offline'. It also provides links to the latest image for each
+    active device.
+
+    Returns:
+        A dictionary containing the status of all ESP32 devices and links
+        to their latest images.
+    """
     # Prune devices that haven't been seen in a while
     now = datetime.datetime.now(datetime.timezone.utc)
     for esp32_id, data in list(esp32_devices.items()):
@@ -249,12 +349,31 @@ async def get_admin_status():
 
 @app.get("/admin/latest-image/{esp32_id}")
 async def get_latest_image(esp32_id: str):
+    """Serves the most recent image received from a specific ESP32.
+
+    Args:
+        esp32_id: The unique identifier of the ESP32 device.
+
+    Returns:
+        A `Response` object containing the raw JPEG image data.
+
+    Raises:
+        HTTPException: If no image is found for the specified `esp32_id`.
+    """
     if esp32_id not in latest_images:
         raise HTTPException(status_code=404, detail="No image found.")
     return Response(content=latest_images[esp32_id], media_type="image/jpeg")
 
 @app.get("/admin")
 async def admin_page(request: Request):
+    """Serves the main admin interface page.
+
+    Args:
+        request: The incoming FastAPI Request object.
+
+    Returns:
+        A `TemplateResponse` that renders the `admin.html` template.
+    """
     return templates.TemplateResponse("admin.html", {"request": request})
 
 # Remove or comment out the old endpoints
