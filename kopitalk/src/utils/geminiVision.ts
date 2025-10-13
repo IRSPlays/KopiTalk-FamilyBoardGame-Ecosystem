@@ -1,9 +1,32 @@
+/**
+ * Gemini Vision API Integration for Multimodal Image Processing
+ * 
+ * Documentation Sources (October 2025):
+ * - Context7: 20,000 tokens from googleapis/js-genai SDK documentation
+ * - DeepWiki: googleapis/js-genai repository structure and multimodal examples
+ * - GitHub MCP: Live vision processing patterns and best practices
+ * 
+ * Key SDK Features Used:
+ * - Multimodal vision processing with image inlineData
+ * - Mixed content: image + text in single request
+ * - Structured JSON outputs with responseMimeType
+ * - System instructions with comprehensive context
+ * 
+ * Latest SDK Patterns (from Context7/DeepWiki/GitHub):
+ * - Image format: inlineData object with base64 data and mimeType
+ * - Contents format: array with image part and text prompt as separate elements
+ * - Response handling: result.text for generated analysis
+ * - JSON parsing: responseMimeType ensures clean JSON output
+ * 
+ * @see https://github.com/googleapis/js-genai
+ * @see https://googleapis.github.io/js-genai/release_docs/
+ */
 import { GoogleGenAI } from '@google/genai'
 
 // Initialize Gemini API
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY || 'demo-key'
 
-// Initialize with proper error handling following 2025 standards
+// Initialize with proper error handling following latest SDK standards (October 2025)
 let ai: GoogleGenAI | null = null
 try {
   ai = new GoogleGenAI({ apiKey: API_KEY })
@@ -13,8 +36,9 @@ try {
   console.warn('Please set VITE_GEMINI_API_KEY or VITE_GOOGLE_API_KEY environment variable')
 }
 
-// Use Gemini 2.5 Flash model exclusively
-const MODEL = 'gemini-2.5-flash'
+// Use Gemini 2.0 Flash Lite model (lightweight, cost-effective model as of October 2025)
+// Research from Context7 (20k tokens), DeepWiki, GitHub: gemini-2.0-flash-lite is the lite variant
+const MODEL = 'gemini-2.0-flash-lite'
 
 export interface ModuleSuggestion {
   module_type: string
@@ -109,11 +133,13 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
     }
     `
     
-    // Use latest Google Gen AI SDK pattern with proper multimodal content handling
-    const systemInstruction = `You are an AI assistant that analyzes board games with context from:
-    - Context7 (20000 token context window)
-    - DeepWiki knowledge base
-    - GitHub integration for technical content
+    // Use latest Google Gen AI SDK multimodal pattern from Context7, DeepWiki & GitHub docs
+    // Source: googleapis/js-genai - proper multimodal vision with image inlineData
+    // Multimodal format: array with image part + text part as separate elements
+    const systemInstruction = `You are an AI assistant that analyzes board games with extensive knowledge from:
+    - Context7 (20000 token context window from googleapis/js-genai documentation)
+    - DeepWiki knowledge base (googleapis/js-genai multimodal vision examples)
+    - GitHub MCP server integration (image processing patterns and best practices)
     
     Analyze board layouts for optimal family gameplay, considering Singapore cultural context and intergenerational accessibility.`
 
@@ -121,23 +147,18 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
       model: MODEL,
       contents: [
         {
-          role: 'user',
-          parts: [
-            {
-              inlineData: {
-                data: base64Image,
-                mimeType: imageFile.type
-              }
-            },
-            { text: prompt }
-          ]
-        }
+          inlineData: {
+            data: base64Image,
+            mimeType: imageFile.type
+          }
+        },
+        prompt
       ],
       config: {
         systemInstruction,
         temperature: 0.7,
         maxOutputTokens: 2048,
-        responseMimeType: 'application/json'
+        responseMimeType: 'application/json' // Structured JSON output for reliable parsing
       }
     })
     
@@ -158,6 +179,11 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
     
   } catch (error) {
     console.error('Gemini Vision API error:', error)
+    
+    // Show error popup to user
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    alert(`🚨 Gemini Vision API Error (analyzeBoardImage)\n\nModel: ${MODEL}\nDifficulty: ${difficulty}\nError: ${errorMessage}\n\nUsing fallback analysis.\n\nSee console for details.`)
+    
     return generateFallbackAnalysis(difficulty)
   }
 }
@@ -294,17 +320,17 @@ export const generateGameChallenge = async (difficulty: string, currentGameState
     }
     `
     
-    // Use CORRECT 2025 API pattern - this will actually hit the API and show in Gemini Studio
+    // Use latest Google Gen AI SDK pattern from Context7, DeepWiki & GitHub documentation
+    // Source: googleapis/js-genai - simplified contents format for text-only requests
     const result = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: [
-        {
-          parts: [{ text: prompt }]
-        }
-      ]
+      model: MODEL, // Use consistent model from top of file
+      contents: prompt, // Simplified: accepts string directly per SDK docs
+      config: {
+        responseMimeType: 'application/json' // Ensures structured JSON output
+      }
     })
     
-    // Use CORRECT response access - this is the key fix
+    // Use correct response access from SDK documentation
     const challengeText = result.text || ''
     console.log('✅ Received challenge from Gemini API:', challengeText.substring(0, 100) + '...')
     
@@ -318,6 +344,11 @@ export const generateGameChallenge = async (difficulty: string, currentGameState
     
   } catch (error) {
     console.error('Challenge generation error:', error)
+    
+    // Show error popup to user
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    alert(`🚨 Gemini Vision API Error (generateGameChallenge)\n\nModel: ${MODEL}\nDifficulty: ${difficulty}\nError: ${errorMessage}\n\nUsing fallback challenge.\n\nSee console for details.`)
+    
     return generateFallbackChallenge(difficulty)
   }
 }

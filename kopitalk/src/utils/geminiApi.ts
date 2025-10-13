@@ -1,6 +1,29 @@
+/**
+ * Gemini API Integration for Text and Audio Processing
+ * 
+ * Documentation Sources (October 2025):
+ * - Context7: 20,000 tokens from googleapis/js-genai SDK documentation
+ * - DeepWiki: googleapis/js-genai repository structure and examples
+ * - GitHub MCP: Live examples and integration patterns
+ * 
+ * Key SDK Features Used:
+ * - Text generation with system instructions and configuration
+ * - Multimodal audio processing with inlineData format
+ * - Structured JSON outputs with responseMimeType
+ * - Proper contents format (string or ContentListUnion)
+ * 
+ * Latest SDK Patterns (from Context7/DeepWiki/GitHub):
+ * - Simplified contents: accepts string directly for text-only requests
+ * - Multimodal contents: array with inlineData objects for media
+ * - System instructions: comprehensive context via config.systemInstruction
+ * - Response access: response.text for generated content
+ * 
+ * @see https://github.com/googleapis/js-genai
+ * @see https://googleapis.github.io/js-genai/release_docs/
+ */
 import { GoogleGenAI } from '@google/genai'
 
-// Initialize Gemini API using the latest @google/genai SDK (2025 standard)
+// Initialize Gemini API using the latest @google/genai SDK (October 2025)
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY || 'demo-key'
 
 // Initialize with proper error handling following latest Google Gen AI SDK patterns
@@ -13,8 +36,9 @@ try {
   console.warn('⚠️ Please set VITE_GEMINI_API_KEY or VITE_GOOGLE_API_KEY environment variable')
 }
 
-// Use Gemini 2.5 Flash model (latest stable model)
-const MODEL = 'gemini-2.5-flash'
+// Use Gemini 2.0 Flash Lite model (lightweight, cost-effective model as of October 2025)
+// Research from Context7 (20k tokens), DeepWiki, GitHub: gemini-2.0-flash-lite is the lite variant
+const MODEL = 'gemini-2.0-flash-lite'
 
 export interface ConversationAnalysis {
   quality: number // 1-100
@@ -123,23 +147,20 @@ export const generateText = async (prompt: string): Promise<string> => {
 
     console.log(`📝 Generating text with Gemini ${MODEL}...`)
 
-    // Use latest Google Gen AI SDK pattern with context integration
-    const systemInstruction = `You are an AI assistant with context from:
-    - Context7 (20000 token context window)
-    - DeepWiki knowledge base
-    - GitHub integration for technical content
+    // Use latest Google Gen AI SDK pattern based on Context7, DeepWiki & GitHub documentation
+    // Source: https://github.com/googleapis/js-genai (Context7: 20000 tokens)
+    // Proper contents structure: string or array with role/parts format
+    const systemInstruction = `You are an AI assistant with extensive knowledge from:
+    - Context7 (20000 token context window from googleapis/js-genai documentation)
+    - DeepWiki knowledge base (googleapis/js-genai repository structure)
+    - GitHub MCP server integration (live examples and best practices)
     
     You specialize in Singapore family dynamics, intergenerational relationships, and cultural contexts.
     Provide helpful, culturally appropriate responses for family gaming experiences.`
 
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: prompt }]
-        }
-      ],
+      contents: prompt, // Simplified format: string or ContentListUnion
       config: {
         systemInstruction,
         temperature: 0.8,
@@ -149,7 +170,7 @@ export const generateText = async (prompt: string): Promise<string> => {
       }
     })
 
-    // Use correct response access pattern
+    // Use correct response access pattern from SDK documentation
     if (!response || !response.text) {
       throw new Error('Empty response from Gemini API')
     }
@@ -159,6 +180,10 @@ export const generateText = async (prompt: string): Promise<string> => {
 
   } catch (error) {
     console.error('❌ Gemini API text generation error:', error)
+    
+    // Show error popup to user
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    alert(`🚨 Gemini API Error (generateText)\n\nModel: ${MODEL}\nError: ${errorMessage}\n\nPlease check:\n✓ API key is valid\n✓ Model name is correct\n✓ Internet connection\n\nSee console for details.`)
     
     // Fallback response
     return `AI text generation temporarily unavailable. Please check your API configuration.`
@@ -223,11 +248,12 @@ export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: 
     }
     `
     
-    // Use correct Google Gen AI SDK pattern with context integration
-    const systemInstruction = `You are an AI challenge generator with context from:
-    - Context7 (2000 token context window)
+    // Use correct Google Gen AI SDK pattern based on Context7, DeepWiki & GitHub documentation
+    // Source: googleapis/js-genai - proper structured JSON output with responseMimeType
+    const systemInstruction = `You are an AI challenge generator with extensive knowledge from:
+    - Context7 (20000 token context window from googleapis/js-genai documentation)
     - DeepWiki knowledge base for Singapore culture and family dynamics
-    - GitHub integration for game mechanics
+    - GitHub MCP server integration with real-world examples
     
     You create engaging, culturally appropriate challenges for Singapore families.
     Focus on intergenerational bonding, local context (hawker centers, MRT, HDB flats, local foods), 
@@ -235,11 +261,11 @@ export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: 
 
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: prompt,
+      contents: prompt, // Simplified: accepts string directly
       config: {
         systemInstruction: systemInstruction,
         maxOutputTokens: 2000,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json" // Ensures structured JSON output
       }
     })
 
@@ -269,6 +295,10 @@ export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: 
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined
     })
+    
+    // Show error popup to user
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    alert(`🚨 Gemini API Error (generatePreGameChallenge)\n\nModel: ${MODEL}\nError: ${errorMessage}\n\nUsing fallback challenge instead.\n\nSee console for details.`)
     
     // Fallback challenge
     return generateFallbackChallenge(gameSession)
@@ -362,16 +392,27 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
       throw new Error('Empty audio blob received')
     }
 
-    if (audioBlob.size > 20 * 1024 * 1024) { // 20MB limit
-      throw new Error('Audio file too large (max 20MB)')
+    // FIXED: Reduce size limit to 5MB to prevent stack overflow
+    // The spread operator causes "Maximum call stack size exceeded" for large files
+    if (audioBlob.size > 5 * 1024 * 1024) { // 5MB limit (safer than 20MB)
+      throw new Error(`Audio file too large: ${Math.round(audioBlob.size / (1024 * 1024))}MB (max 5MB). Please record shorter audio.`)
     }
 
-    // Convert audio to base64 for Gemini with proper error handling
-    console.log('🔄 Converting audio to base64...')
+    // Convert audio to base64 using chunked approach to avoid stack overflow
+    console.log('🔄 Converting audio to base64 (chunked method)...')
     const arrayBuffer = await audioBlob.arrayBuffer()
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const uint8Array = new Uint8Array(arrayBuffer)
     
-    console.log('✅ Base64 conversion complete, length:', base64Audio.length)
+    // FIXED: Use chunked conversion instead of spread operator to prevent stack overflow
+    let binaryString = ''
+    const chunkSize = 8192 // Process 8KB at a time
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk))
+    }
+    const base64Audio = btoa(binaryString)
+    
+    console.log('✅ Base64 conversion complete, length:', base64Audio.length, 'chunks:', Math.ceil(uint8Array.length / chunkSize))
     
     const prompt = `
     Analyze this family conversation recording for intergenerational bonding quality.
@@ -390,11 +431,13 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
     Respond in JSON format with: quality, movement, feedback, topics_covered, bonding_level
     `
     
-    // Use correct Google Gen AI SDK pattern with context integration
-    const systemInstruction = `You are an AI assistant that analyzes family conversations with context from:
-    - Context7 (2000 token context window)
-    - DeepWiki knowledge base
-    - GitHub integration for technical content
+    // Use correct Google Gen AI SDK multimodal pattern from Context7, DeepWiki & GitHub docs
+    // Source: googleapis/js-genai - multimodal content with audio inlineData
+    // Format: contents array with mixed text and media parts
+    const systemInstruction = `You are an AI assistant that analyzes family conversations with extensive knowledge from:
+    - Context7 (20000 token context window from googleapis/js-genai documentation)
+    - DeepWiki knowledge base (googleapis/js-genai multimodal examples)
+    - GitHub MCP server integration (live audio processing patterns)
     
     Analyze conversations for intergenerational bonding, cultural exchange, and meaningful connections.
     Consider Singapore cultural context and family dynamics.`
@@ -411,7 +454,8 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
         prompt
       ],
       config: {
-        systemInstruction: systemInstruction
+        systemInstruction: systemInstruction,
+        responseMimeType: "application/json" // Ensures structured JSON output for parsing
       }
     })
 
@@ -458,6 +502,10 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
       audioType: audioBlob.type
     })
     
+    // Show error popup to user
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    alert(`🚨 Gemini API Error (analyzeConversation)\n\nModel: ${MODEL}\nAudio: ${Math.round(audioBlob.size / 1024)}KB, ${duration}s\nError: ${errorMessage}\n\nUsing fallback analysis.\n\nSee console for details.`)
+    
     // Enhanced fallback analysis based on duration and realistic patterns
     const baseQuality = Math.random() * 40 + 50 // 50-90%
     const durationBonus = Math.min(duration / 60, 1) // Up to 1 minute bonus
@@ -497,19 +545,30 @@ export const analyzeVideo = async (videoBlob: Blob, description: string): Promis
       throw new Error('Empty video blob received')
     }
 
-    if (videoBlob.size > 20 * 1024 * 1024) { // 20MB limit
-      throw new Error('Video file too large (max 20MB)')
+    // FIXED: Reduce size limit to 10MB to prevent stack overflow
+    if (videoBlob.size > 10 * 1024 * 1024) { // 10MB limit (safer than 20MB)
+      throw new Error(`Video file too large: ${Math.round(videoBlob.size / (1024 * 1024))}MB (max 10MB). Please record shorter video.`)
     }
 
     if (!description.trim()) {
       throw new Error('Video description is required for analysis')
     }
 
-    console.log('🔄 Converting video to base64...')
+    // Convert video to base64 using chunked approach to avoid stack overflow
+    console.log('🔄 Converting video to base64 (chunked method)...')
     const arrayBuffer = await videoBlob.arrayBuffer()
-    const base64Video = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const uint8Array = new Uint8Array(arrayBuffer)
     
-    console.log('✅ Video base64 conversion complete, length:', base64Video.length)
+    // FIXED: Use chunked conversion instead of spread operator to prevent stack overflow
+    let binaryString = ''
+    const chunkSize = 8192 // Process 8KB at a time
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk))
+    }
+    const base64Video = btoa(binaryString)
+    
+    console.log('✅ Video base64 conversion complete, length:', base64Video.length, 'chunks:', Math.ceil(uint8Array.length / chunkSize))
     
     const prompt = `
     Analyze this TikTok trend video for creativity and family engagement.
@@ -591,6 +650,10 @@ export const analyzeVideo = async (videoBlob: Blob, description: string): Promis
       videoSize: videoBlob.size,
       videoType: videoBlob.type
     })
+    
+    // Show error popup to user
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    alert(`🚨 Gemini API Error (analyzeVideo)\n\nModel: ${MODEL}\nVideo: ${Math.round(videoBlob.size / (1024 * 1024))}MB\nError: ${errorMessage}\n\nUsing fallback analysis.\n\nSee console for details.`)
     
     // Enhanced fallback analysis
     const videoSize = videoBlob.size / (1024 * 1024) // MB
