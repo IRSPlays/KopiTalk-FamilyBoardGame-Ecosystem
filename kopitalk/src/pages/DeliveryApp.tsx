@@ -1,78 +1,231 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Package, Clock, MapPin, Truck, Star, Home, Gamepad2 } from 'lucide-react'
+import { 
+  ArrowLeft, Package, Clock, ShoppingCart, Check, X, AlertCircle, 
+  Sparkles, DollarSign, TrendingUp, Users, CheckCircle2,
+  ShoppingBag, Bike, MapPin, Star, Plus, Minus, Gamepad2
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useGameStore } from '../stores/gameStore'
 
-interface Order {
+interface DeliveryItem {
   id: string
-  restaurant: string
-  items: string[]
-  address: string
-  distance: string
-  estimatedTime: string
+  name: string
+  category: 'fresh_produce' | 'meat_seafood' | 'pantry' | 'dairy' | 'condiments'
   price: number
+  unit: string
+  isRequired: boolean
+  alreadyCollected: boolean
+  inStock: boolean
+}
+
+interface DeliveryStore {
+  id: string
+  name: string
+  icon: string
+  deliveryFee: number
+  minOrder: number
+  estimatedTime: string
   rating: number
-  status: 'pending' | 'preparing' | 'ready' | 'delivered'
+  items: DeliveryItem[]
+  specialOffer?: string
 }
 
 const DeliveryApp: React.FC = () => {
   const navigate = useNavigate()
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  
+  const dishChallenge = useGameStore(state => state.dishChallenge)
+  const collectedIngredients = useGameStore(state => state.collectedIngredients)
+  const markIngredientCollected = useGameStore(state => state.markIngredientCollected)
+  const family_budget = useGameStore(state => state.family_budget)
+  const updateFamilyBudget = useGameStore(state => state.updateFamilyBudget)
+  const addCompletedActivity = useGameStore(state => state.addCompletedActivity)
+  const activeWeatherChallenge = useGameStore(state => state.activeWeatherChallenge)
+  
+  const [selectedStore, setSelectedStore] = useState<DeliveryStore | null>(null)
+  const [cart, setCart] = useState<{ item: DeliveryItem; quantity: number }[]>([])
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [deliveryComplete, setDeliveryComplete] = useState(false)
 
-  const mockOrders: Order[] = [
-    {
-      id: '1',
-      restaurant: 'Old Chang Kee',
-      items: ['Curry Puff', 'Ice Cream Puff', 'Sardine Puff'],
-      address: 'Causeway Point, Woodlands',
-      distance: '2.3 km',
-      estimatedTime: '25-35 min',
-      price: 8.50,
-      rating: 4.5,
-      status: 'preparing'
-    },
-    {
-      id: '2', 
-      restaurant: 'Ya Kun Kaya Toast',
-      items: ['Kaya Toast Set', 'Kopi O', 'Half-boiled Eggs'],
-      address: 'Junction 8, Bishan',
-      distance: '4.1 km',
-      estimatedTime: '30-40 min', 
-      price: 12.80,
-      rating: 4.7,
-      status: 'ready'
-    },
-    {
-      id: '3',
-      restaurant: 'Hawker Centre',
-      items: ['Chicken Rice', 'Laksa', 'Ice Kachang'],
-      address: 'Toa Payoh Central',
-      distance: '3.8 km',
-      estimatedTime: '35-45 min',
-      price: 15.20,
-      rating: 4.3,
-      status: 'pending'
-    }
-  ]
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'preparing': return 'bg-blue-100 text-blue-800'
-      case 'ready': return 'bg-green-100 text-green-800'
-      case 'delivered': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+  const isIngredientCollected = (itemName: string): boolean => {
+    return collectedIngredients.some(
+      ing => ing.name.toLowerCase() === itemName.toLowerCase()
+    )
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return Clock
-      case 'preparing': return Package
-      case 'ready': return Truck
-      case 'delivered': return Home
-      default: return Clock
+  function inferCategory(ingredientName: string): string {
+    const name = ingredientName.toLowerCase()
+    if (/chicken|pork|beef|fish|prawn|seafood|meat|mutton|duck/.test(name)) return 'meat_seafood'
+    if (/vegetable|carrot|onion|garlic|ginger|chili|tomato|cucumber|lettuce|cabbage|bok choy|kailan|spinach|broccoli/.test(name)) return 'fresh_produce'
+    if (/rice|noodle|flour|sugar|salt|oil|sauce|pasta|bread/.test(name)) return 'pantry'
+    if (/milk|cheese|yogurt|butter|egg|cream/.test(name)) return 'dairy'
+    if (/soy sauce|oyster|vinegar|ketchup|paste|sambal|belacan/.test(name)) return 'condiments'
+    return 'pantry'
+  }
+
+  const stores: DeliveryStore[] = useMemo(() => {
+    const requiredIngredients = dishChallenge?.ingredients || []
+    
+    const generateStoreItems = (categories: string[]): DeliveryItem[] => {
+      const items: DeliveryItem[] = []
+      
+      requiredIngredients.forEach((ingredient, index) => {
+        const category = inferCategory(ingredient.name)
+        if (categories.includes(category)) {
+          const alreadyCollected = isIngredientCollected(ingredient.name)
+          const basePrice = Math.random() * 4 + 2
+          const priceMultiplier = activeWeatherChallenge?.effects.priceMultiplier || 1
+          
+          items.push({
+            id: `required-${index}`,
+            name: ingredient.name,
+            category: category as any,
+            price: basePrice * priceMultiplier,
+            unit: ingredient.unit || 'piece',
+            isRequired: true,
+            alreadyCollected,
+            inStock: !alreadyCollected
+          })
+        }
+      })
+      
+      if (categories.includes('fresh_produce')) {
+        items.push(
+          { id: 'veg-1', name: 'Bok Choy', category: 'fresh_produce', price: 2.50, unit: 'bunch', isRequired: false, alreadyCollected: false, inStock: true },
+          { id: 'veg-2', name: 'Cherry Tomatoes', category: 'fresh_produce', price: 3.20, unit: 'pack', isRequired: false, alreadyCollected: false, inStock: true }
+        )
+      }
+      if (categories.includes('meat_seafood')) {
+        items.push(
+          { id: 'meat-1', name: 'Fresh Prawns', category: 'meat_seafood', price: 12.80, unit: 'kg', isRequired: false, alreadyCollected: false, inStock: true },
+          { id: 'meat-2', name: 'Chicken Thigh', category: 'meat_seafood', price: 8.50, unit: 'kg', isRequired: false, alreadyCollected: false, inStock: true }
+        )
+      }
+      if (categories.includes('pantry')) {
+        items.push(
+          { id: 'pantry-1', name: 'Jasmine Rice', category: 'pantry', price: 5.90, unit: '2kg', isRequired: false, alreadyCollected: false, inStock: true },
+          { id: 'pantry-2', name: 'Sesame Oil', category: 'pantry', price: 4.50, unit: 'bottle', isRequired: false, alreadyCollected: false, inStock: true }
+        )
+      }
+      
+      return items
     }
+
+    return [
+      {
+        id: 'fairprice',
+        name: 'FairPrice Online',
+        icon: '🛒',
+        deliveryFee: 2.99,
+        minOrder: 20,
+        estimatedTime: '2-3 hours',
+        rating: 4.5,
+        items: generateStoreItems(['fresh_produce', 'pantry', 'dairy']),
+        specialOffer: 'Free delivery over $60'
+      },
+      {
+        id: 'coldstorage',
+        name: 'Cold Storage',
+        icon: '❄️',
+        deliveryFee: 3.99,
+        minOrder: 30,
+        estimatedTime: '3-4 hours',
+        rating: 4.6,
+        items: generateStoreItems(['meat_seafood', 'dairy', 'pantry']),
+        specialOffer: '$5 off first order'
+      },
+      {
+        id: 'redmart',
+        name: 'RedMart',
+        icon: '🔴',
+        deliveryFee: 0,
+        minOrder: 40,
+        estimatedTime: '1-2 days',
+        rating: 4.7,
+        items: generateStoreItems(['fresh_produce', 'meat_seafood', 'pantry', 'condiments']),
+        specialOffer: 'Free delivery always!'
+      },
+      {
+        id: 'shengsiong',
+        name: 'ShengSiong Online',
+        icon: '🏪',
+        deliveryFee: 2.50,
+        minOrder: 25,
+        estimatedTime: '4-5 hours',
+        rating: 4.4,
+        items: generateStoreItems(['fresh_produce', 'pantry', 'condiments']),
+        specialOffer: '10% off fresh produce'
+      }
+    ]
+  }, [dishChallenge, collectedIngredients, activeWeatherChallenge])
+
+  const addToCart = (item: DeliveryItem) => {
+    if (!item.inStock) return
+    
+    setCart(prev => {
+      const existing = prev.find(c => c.item.id === item.id)
+      if (existing) {
+        return prev.map(c => 
+          c.item.id === item.id 
+            ? { ...c, quantity: c.quantity + 1 }
+            : c
+        )
+      }
+      return [...prev, { item, quantity: 1 }]
+    })
+  }
+
+  const updateQuantity = (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setCart(prev => prev.filter(c => c.item.id !== itemId))
+      return
+    }
+    setCart(prev => prev.map(c => 
+      c.item.id === itemId ? { ...c, quantity: newQuantity } : c
+    ))
+  }
+
+  const calculateSubtotal = () => {
+    return cart.reduce((sum, c) => sum + (c.item.price * c.quantity), 0)
+  }
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal()
+    const deliveryFee = selectedStore?.deliveryFee || 0
+    return subtotal + deliveryFee
+  }
+
+  const handleCheckout = () => {
+    if (!selectedStore) return
+    
+    const total = calculateTotal()
+    if (total > family_budget) {
+      alert(`Not enough budget! Need $${total.toFixed(2)} but only have $${family_budget.toFixed(2)}`)
+      return
+    }
+
+    const requiredItemsInCart = cart.filter(c => c.item.isRequired)
+    const earnings = Math.floor(requiredItemsInCart.length * 3.5) + 10
+
+    cart.forEach(c => {
+      if (c.item.isRequired && !c.item.alreadyCollected) {
+        markIngredientCollected(c.item.name, 'delivery')
+      }
+    })
+
+    updateFamilyBudget(family_budget - total + earnings)
+
+    addCompletedActivity({
+      id: `delivery-${Date.now()}`,
+      type: 'digital_skills',
+      earnings,
+      timestamp: new Date().toISOString(),
+      participants: [],
+      details: `Ordered from ${selectedStore.name} - collected ${requiredItemsInCart.length} required ingredients`
+    })
+
+    setDeliveryComplete(true)
+    setCart([])
   }
 
   return (
@@ -82,8 +235,7 @@ const DeliveryApp: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         <motion.div 
           className="flex items-center gap-4 mb-6"
           initial={{ y: -20, opacity: 0 }}
@@ -91,258 +243,402 @@ const DeliveryApp: React.FC = () => {
           transition={{ delay: 0.1 }}
         >
           <motion.button
-            onClick={() => navigate('/')}
-            className="p-2 hover:bg-white rounded-lg transition-colors"
+            onClick={() => navigate('/game')}
+            className="p-3 hover:bg-white rounded-lg transition-colors min-h-[44px] min-w-[44px]"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-6 h-6" />
           </motion.button>
-          <div>
-            <motion.h1 
-              className="text-2xl font-bold text-gray-900"
-              animate={{ 
-                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-              }}
-              transition={{ 
-                duration: 5,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-              style={{
-                backgroundImage: "linear-gradient(90deg, #111827, #3b82f6, #111827)",
-                backgroundSize: "200% 100%",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              Singapore Delivery
-            </motion.h1>
-            <p className="text-gray-600">Track your family's food orders</p>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gray-900">Delivery Apps</h1>
+            <p className="text-gray-600">Order ingredients for your dish</p>
           </div>
-          
-          {/* Back to Game Button */}
-          <motion.button
-            onClick={() => navigate('/game')}
-            className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium flex items-center gap-2"
-            whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(168, 85, 247, 0.4)" }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm text-gray-600">Budget</p>
+              <p className="text-lg font-bold text-green-600">${family_budget.toFixed(2)}</p>
+            </div>
+            <motion.button
+              onClick={() => setShowCheckout(true)}
+              className="relative p-3 bg-blue-500 text-white rounded-lg min-h-[44px] min-w-[44px]"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Gamepad2 className="w-4 h-4" />
-            </motion.div>
-            Back to Game
-          </motion.button>
+              <ShoppingCart className="w-6 h-6" />
+              {cart.length > 0 && (
+                <motion.div
+                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                >
+                  {cart.length}
+                </motion.div>
+              )}
+            </motion.button>
+          </div>
         </motion.div>
 
-        <motion.div 
-          className="grid lg:grid-cols-2 gap-6"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          {/* Orders List */}
-          <div className="space-y-4">
-            <motion.h2 
-              className="text-lg font-semibold text-gray-800 mb-4"
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
+        {dishChallenge && (
+          <motion.div
+            className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 mb-6"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-purple-600" />
+              <div>
+                <h3 className="font-semibold text-gray-900">Current Challenge</h3>
+                <p className="text-sm text-gray-700">{dishChallenge.dish_name}</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Required ingredients: {dishChallenge.ingredients.filter(i => !isIngredientCollected(i.name)).length} remaining
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {activeWeatherChallenge && (
+          <motion.div
+            className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-yellow-600" />
+              <p className="text-sm text-yellow-800">
+                <strong>{activeWeatherChallenge.type}!</strong> {activeWeatherChallenge.description}
+                {activeWeatherChallenge.effects.priceMultiplier && ` (×${activeWeatherChallenge.effects.priceMultiplier})`}
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {stores.map((store, index) => (
+            <motion.div
+              key={store.id}
+              className={`bg-white rounded-xl p-6 shadow-sm border-2 cursor-pointer transition-all ${
+                selectedStore?.id === store.id 
+                  ? 'border-blue-500 shadow-lg' 
+                  : 'border-gray-200 hover:border-blue-300'
+              }`}
+              onClick={() => setSelectedStore(store)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 + index * 0.1 }}
+              whileHover={{ scale: 1.02, y: -5 }}
+              whileTap={{ scale: 0.98 }}
             >
-              Active Orders
-            </motion.h2>
-            
-            {mockOrders.map((order, index) => {
-              const StatusIcon = getStatusIcon(order.status)
-              
-              return (
-                <motion.div
-                  key={order.id}
-                  onClick={() => setSelectedOrder(order)}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                  whileHover={{ 
-                    scale: 1.02, 
-                    y: -5,
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.1)"
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{order.restaurant}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="text-sm text-gray-600">{order.rating}</span>
-                        </div>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-sm text-gray-600">{order.distance}</span>
-                      </div>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(order.status)}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <p className="text-sm text-gray-600 mb-1">Items:</p>
-                    <p className="text-sm text-gray-800">{order.items.join(', ')}</p>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <motion.div 
-                      className="flex items-center gap-2 text-sm text-gray-600"
-                      animate={{ x: [0, 2, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                    >
-                      <MapPin className="w-4 h-4" />
-                      {order.address}
-                    </motion.div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">${order.price.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500">{order.estimatedTime}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-
-          {/* Order Details */}
-          <AnimatePresence mode="wait">
-            <motion.div 
-              className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              {selectedOrder ? (
-                <motion.div
-                  key={selectedOrder.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                >
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Details</h3>
-                
-                <div className="space-y-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl">{store.icon}</span>
                   <div>
-                    <h4 className="font-medium text-gray-900">{selectedOrder.restaurant}</h4>
+                    <h3 className="font-bold text-lg text-gray-900">{store.name}</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-sm text-gray-600">{selectedOrder.rating}</span>
+                        <span className="text-sm text-gray-600">{store.rating}</span>
                       </div>
                       <span className="text-gray-300">•</span>
-                      <span className="text-sm text-gray-600">{selectedOrder.distance} away</span>
+                      <span className="text-sm text-gray-600">{store.estimatedTime}</span>
                     </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Items Ordered</h4>
-                    <div className="space-y-1">
-                      {selectedOrder.items.map((item, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span className="text-gray-600">{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span className="text-gray-900">${(selectedOrder.price * 0.9).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-600">Delivery Fee</span>
-                      <span className="text-gray-900">${(selectedOrder.price * 0.1).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center font-semibold">
-                      <span>Total</span>
-                      <span>${selectedOrder.price.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium text-blue-900">Estimated Delivery</span>
-                    </div>
-                    <p className="text-blue-800">{selectedOrder.estimatedTime}</p>
-                    <p className="text-sm text-blue-600 mt-1">To: {selectedOrder.address}</p>
                   </div>
                 </div>
-              </motion.div>
-            ) : (
-              <motion.div 
-                className="text-center py-12"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-              >
-                <motion.div
-                  animate={{ 
-                    y: [0, -10, 0],
-                    rotate: [0, 5, -5, 0]
-                  }}
-                  transition={{ 
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                </motion.div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Select an Order</h3>
-                <p className="text-gray-500">Click on an order from the left to view details</p>
-              </motion.div>
+                {selectedStore?.id === store.id && (
+                  <CheckCircle2 className="w-6 h-6 text-blue-500" />
+                )}
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <div className="space-y-1">
+                  <p className="text-gray-600">
+                    Delivery: <span className="font-semibold text-gray-900">${store.deliveryFee.toFixed(2)}</span>
+                  </p>
+                  <p className="text-gray-600">
+                    Min order: <span className="font-semibold text-gray-900">${store.minOrder}</span>
+                  </p>
+                </div>
+                {store.specialOffer && (
+                  <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
+                    {store.specialOffer}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {selectedStore && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Available Items</h2>
+            
+            {selectedStore.items.filter(item => item.isRequired && item.inStock).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  Required for Your Dish
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedStore.items
+                    .filter(item => item.isRequired && item.inStock)
+                    .map((item, index) => (
+                      <motion.div
+                        key={item.id}
+                        className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileHover={{ scale: 1.03, boxShadow: "0 10px 30px rgba(34, 197, 94, 0.2)" }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                            <p className="text-sm text-gray-600">{item.unit}</p>
+                          </div>
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-bold text-gray-900">${item.price.toFixed(2)}</span>
+                          <motion.button
+                            onClick={() => addToCart(item)}
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 min-h-[44px]"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {selectedStore.items.filter(item => !item.isRequired && item.inStock).length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-3">Other Available Items</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedStore.items
+                    .filter(item => !item.isRequired && item.inStock)
+                    .map((item, index) => (
+                      <motion.div
+                        key={item.id}
+                        className="bg-white rounded-lg p-4 border border-gray-200"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileHover={{ scale: 1.03 }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                            <p className="text-sm text-gray-600">{item.unit}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-bold text-gray-900">${item.price.toFixed(2)}</span>
+                          <motion.button
+                            onClick={() => addToCart(item)}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 min-h-[44px]"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {selectedStore.items.filter(item => !item.inStock).length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-500 mb-3">Out of Stock</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedStore.items
+                    .filter(item => !item.inStock)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-gray-100 rounded-lg p-4 border border-gray-300 opacity-60"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-600">{item.name}</h4>
+                            <p className="text-sm text-gray-500">{item.unit}</p>
+                          </div>
+                          <X className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <p className="text-sm text-gray-500">Already collected</p>
+                      </div>
+                    ))}
+                </div>
+              </div>
             )}
           </motion.div>
-        </AnimatePresence>
-        </motion.div>
+        )}
 
-        {/* Quick Actions */}
-        <motion.div 
-          className="bg-gray-50 rounded-xl p-6"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Singapore Family Favorites</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { name: 'Chicken Rice', time: '20-30 min', price: '$4.50' },
-              { name: 'Laksa', time: '25-35 min', price: '$6.80' },
-              { name: 'Char Kway Teow', time: '22-32 min', price: '$5.50' },
-              { name: 'Bak Kut Teh', time: '30-40 min', price: '$8.90' }
-            ].map((dish, index) => (
-              <motion.div 
-                key={index} 
-                className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors cursor-pointer"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 + index * 0.1 }}
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.98 }}
+        <AnimatePresence>
+          {showCheckout && cart.length > 0 && (
+            <motion.div
+              className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCheckout(false)}
+            >
+              <motion.div
+                className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
               >
-                <h4 className="font-medium text-gray-900 text-sm">{dish.name}</h4>
-                <p className="text-xs text-gray-500 mt-1">{dish.time}</p>
-                <p className="text-sm font-semibold text-blue-600 mt-1">{dish.price}</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Cart</h2>
+                
+                <div className="space-y-3 mb-6">
+                  {cart.map((cartItem) => (
+                    <div
+                      key={cartItem.item.id}
+                      className={`p-3 rounded-lg ${
+                        cartItem.item.isRequired ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900">{cartItem.item.name}</h4>
+                          <p className="text-sm text-gray-600">${cartItem.item.price.toFixed(2)} per {cartItem.item.unit}</p>
+                          {cartItem.item.isRequired && (
+                            <span className="text-xs text-green-600 font-medium">✓ Required ingredient</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <motion.button
+                            onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
+                            className="p-1 bg-gray-200 rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </motion.button>
+                          <span className="text-lg font-semibold w-8 text-center">{cartItem.quantity}</span>
+                          <motion.button
+                            onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
+                            className="p-1 bg-gray-200 rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </motion.button>
+                        </div>
+                        <span className="text-lg font-bold">${(cartItem.item.price * cartItem.quantity).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t pt-4 space-y-2 mb-6">
+                  <div className="flex justify-between text-gray-700">
+                    <span>Subtotal</span>
+                    <span>${calculateSubtotal().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-700">
+                    <span>Delivery Fee</span>
+                    <span>${(selectedStore?.deliveryFee || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xl font-bold text-gray-900">
+                    <span>Total</span>
+                    <span>${calculateTotal().toFixed(2)}</span>
+                  </div>
+                  {cart.filter(c => c.item.isRequired).length > 0 && (
+                    <div className="flex items-center justify-between bg-green-100 p-3 rounded-lg">
+                      <span className="text-sm text-green-800 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        Earnings for collecting ingredients
+                      </span>
+                      <span className="text-lg font-bold text-green-700">
+                        +${(Math.floor(cart.filter(c => c.item.isRequired).length * 3.5) + 10).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <motion.button
+                    onClick={() => setShowCheckout(false)}
+                    className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold min-h-[44px]"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Continue Shopping
+                  </motion.button>
+                  <motion.button
+                    onClick={handleCheckout}
+                    className="flex-1 py-3 bg-green-500 text-white rounded-lg font-semibold min-h-[44px]"
+                    whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(34, 197, 94, 0.4)" }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Place Order
+                  </motion.button>
+                </div>
               </motion.div>
-            ))}
-          </div>
-        </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {deliveryComplete && (
+            <motion.div
+              className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white rounded-2xl p-8 max-w-md w-full text-center"
+                initial={{ scale: 0.5, opacity: 0, y: 50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.5, opacity: 0, y: 50 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 500, damping: 30 }}
+                >
+                  <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-4" />
+                </motion.div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Placed!</h2>
+                <p className="text-gray-600 mb-6">
+                  Your ingredients will be delivered to your home. Earnings have been added to your budget!
+                </p>
+                <motion.button
+                  onClick={() => {
+                    setDeliveryComplete(false)
+                    navigate('/game')
+                  }}
+                  className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 min-h-[44px]"
+                  whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(168, 85, 247, 0.4)" }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Gamepad2 className="w-5 h-5" />
+                  Back to Game
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   )

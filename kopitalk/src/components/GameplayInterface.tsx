@@ -4,8 +4,7 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion'
 import { GameSession, FamilyMember } from '../types'
 import { 
   Users, Mic, Camera, ShoppingCart, ChefHat, Bus, CreditCard,
-  Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, Crown, Heart,
-  Sparkles, DollarSign, ArrowRight, Package, Timer, Trophy,
+  Crown, Heart, Sparkles, DollarSign, ArrowRight, Package, Timer, Trophy,
   Gift, MapPin, Clock, Zap, Target, Activity, TrendingUp,
   Settings, Home, Play, Pause, RotateCcw, CheckCircle,
   AlertCircle, Star, Gamepad2, Wallet, Brain, Eye
@@ -67,10 +66,10 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
   // Core game state
   const [showAudioModal, setShowAudioModal] = useState(false)
   const [showTikTokModal, setShowTikTokModal] = useState(false)
-  const [diceRoll, setDiceRoll] = useState<number | null>(null)
-  const [isRolling, setIsRolling] = useState(false)
   const [currentEvent, setCurrentEvent] = useState<RandomEvent | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
+  const [pendingMovement, setPendingMovement] = useState<number>(0)
+  const [movementReason, setMovementReason] = useState<string>('')
 
   // Notification system
   const showNotification = (message: string, type: 'success' | 'warning' | 'error') => {
@@ -152,22 +151,6 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
       opacity: 0,
       transition: { duration: 0.3, ease: "easeIn" }
     })
-  }
-
-  const diceRollVariants = {
-    rolling: {
-      rotate: [0, 360, 720, 1080],
-      scale: [1, 1.2, 1, 1.2, 1],
-      transition: { 
-        duration: 1, 
-        ease: [0.25, 0.1, 0.25, 1] as any
-      }
-    },
-    stopped: {
-      rotate: 0,
-      scale: 1,
-      transition: { duration: 0.3 }
-    }
   }
 
   // Singapore Life Modules - ALL FEATURES INTEGRATED
@@ -286,10 +269,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
     }
   ]
 
-  const currentPlayer = gameSession.family_members[gameSession.current_player_index]
-  const nextPlayerIndex = (gameSession.current_player_index + 1) % gameSession.family_members.length
-
-  // Helper functions
+  // Helper functions - No more turn-based system, all players can act simultaneously
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'grandfather': return Crown
@@ -300,12 +280,6 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
     }
   }
 
-  const getDiceIcon = (number: number | null) => {
-    if (!number) return Dice1
-    const icons = [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]
-    return icons[number - 1]
-  }
-
   // Game mechanics
   const updatePlayer = (playerId: number, updates: Partial<FamilyMember>) => {
     const updatedMembers = gameSession.family_members.map((member, index) => 
@@ -314,39 +288,8 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
     onUpdateGame({ family_members: updatedMembers })
   }
 
-  const nextTurn = () => {
-    onUpdateGame({ 
-      current_player_index: nextPlayerIndex,
-      last_updated: new Date().toISOString()
-    })
-    setDiceRoll(null)
-  }
-
-  const rollDice = () => {
-    setIsRolling(true)
-    
-    let count = 0
-    const interval = setInterval(() => {
-      setDiceRoll(Math.floor(Math.random() * 6) + 1)
-      count++
-      
-      if (count > 10) {
-        clearInterval(interval)
-        const finalRoll = Math.floor(Math.random() * 6) + 1
-        setDiceRoll(finalRoll)
-        setIsRolling(false)
-        
-        // Move current player
-        const newPosition = Math.min(currentPlayer.position + finalRoll, 20)
-        updatePlayer(gameSession.current_player_index, { position: newPosition })
-        
-        // Trigger random event
-        const event = getRandomEvent()
-        setCurrentEvent(event)
-        setShowEventModal(true)
-      }
-    }, 100)
-  }
+  // REMOVED: Turn-based system replaced with continuous roleplay
+  // Movement is now conversation-based through AI analysis
 
   // Singapore Life Module handlers
   const startModule = (module: SingaporeLifeModule) => {
@@ -355,22 +298,24 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
     navigate(module.path)
   }
 
-  const completeModule = (moduleId: string) => {
+  const completeModule = (moduleId: string, playerId?: number) => {
     const module = singaporeLifeModules.find(m => m.id === moduleId)
     if (!module) return
 
-    // Apply rewards to current player
-    const updatedPlayer = {
-      ...currentPlayer,
-      cash: currentPlayer.cash + module.rewards.money,
-      points: currentPlayer.points + module.rewards.points,
-      position: Math.min(currentPlayer.position + module.rewards.movement, 20)
-    }
+    // Apply rewards to all active players (collaborative roleplay)
+    const updatedMembers = gameSession.family_members.map((member, index) => {
+      // If specific player ID provided, only update that player
+      if (playerId !== undefined && index !== playerId) return member
+      return {
+        ...member,
+        cash: member.cash + module.rewards.money,
+        points: member.points + module.rewards.points,
+        position: Math.min(member.position + module.rewards.movement, 20)
+      }
+    })
 
-    updatePlayer(gameSession.current_player_index, updatedPlayer)
-    
-    // Update family budget
-    onUpdateGame({
+    onUpdateGame({ 
+      family_members: updatedMembers,
       family_budget: gameSession.family_budget + (module.rewards.money * 0.5)
     })
 
@@ -420,20 +365,21 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
     alert(`${result.feedback}\nFamily earned: $${result.earnings}!\nCreativity: ${result.creativity_level}`)
   }
 
-  const handleMarketShopping = (marketId: string) => {
+  const handleMarketShopping = (marketId: string, playerId: number) => {
     const market = markets.find(m => m.id === marketId)
     if (!market) return
     
+    const player = gameSession.family_members[playerId]
     const cost = Math.floor(Math.random() * 30) + 20
     const earnings = Math.floor(cost * 0.1) + 5
     
-    if (currentPlayer.cash >= cost) {
-      updatePlayer(gameSession.current_player_index, {
-        cash: currentPlayer.cash - cost + earnings
+    if (player.cash >= cost) {
+      updatePlayer(playerId, {
+        cash: player.cash - cost + earnings
       })
-      alert(`🛒 Shopped at ${market.name}!\n💸 Spent: $${cost}\n💰 Earned from reselling: $${earnings}`)
+      showNotification(`🛒 ${player.name} shopped at ${market.name}! Spent $${cost}, earned $${earnings}`, 'success')
     } else {
-      alert(`❌ Not enough cash! You need $${cost} but only have $${currentPlayer.cash}`)
+      showNotification(`❌ ${player.name} needs $${cost} but only has $${player.cash}`, 'error')
     }
   }
 
@@ -550,7 +496,6 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
               <div className="space-y-3 sm:space-y-4">
                 {gameSession.family_members.map((member, index) => {
                   const Icon = getRoleIcon(member.role)
-                  const isCurrentPlayer = index === gameSession.current_player_index
                   
                   return (
                     <motion.div
@@ -558,27 +503,18 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                       variants={itemVariants}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className={`p-3 sm:p-4 rounded-xl border-2 transition-all touch-manipulation ${
-                        isCurrentPlayer 
-                          ? 'border-kopi-400 bg-gradient-to-r from-kopi-50 to-talk-50 shadow-md' 
-                          : 'border-gray-200 hover:border-kopi-300'
-                      }`}
+                      className="p-3 sm:p-4 rounded-xl border-2 border-gray-200 hover:border-kopi-300 transition-all touch-manipulation"
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        <Icon className={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 ${isCurrentPlayer ? 'text-kopi-600' : 'text-gray-500'}`} />
+                        <Icon className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 text-kopi-600" />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-sm sm:text-base text-gray-800 flex items-center gap-2 truncate">
                             <span className="truncate">{member.name}</span>
-                            {isCurrentPlayer && <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />}
                           </h3>
                           <p className="text-xs sm:text-sm text-gray-500 capitalize">{member.role}</p>
                         </div>
-                        <div className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                          isCurrentPlayer 
-                            ? 'bg-gradient-to-r from-kopi-500 to-talk-500 text-white' 
-                            : 'bg-gray-200 text-gray-600'
-                        }`}>
-                          {isCurrentPlayer ? 'PLAYING' : 'WAITING'}
+                        <div className="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-gradient-to-r from-kopi-500 to-talk-500 text-white">
+                          ACTIVE
                         </div>
                       </div>
                       
@@ -658,43 +594,24 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                     <p className="text-xs sm:text-sm opacity-90">Create Singapore content and earn $5-25</p>
                   </motion.button>
 
-                  {/* Dice Roll */}
-                  <motion.button
-                    variants={cardHoverVariants}
-                    whileHover="hover"
-                    whileTap="tap"
-                    onClick={rollDice}
-                    disabled={isRolling}
-                    className="p-4 sm:p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl disabled:opacity-50 shadow-md hover:shadow-lg transition-shadow touch-manipulation"
-                  >
+                  {/* REMOVED: Dice rolling - replaced with conversation-based movement */}
+                  {/* Movement now determined by AI analysis of conversations */}
+                  
+                  {pendingMovement > 0 && (
                     <motion.div
-                      animate={isRolling ? "rolling" : "stopped"}
-                      variants={diceRollVariants}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 sm:p-6 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-md"
                     >
-                      {React.createElement(getDiceIcon(diceRoll), { 
-                        className: "w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-3"
-                      })}
+                      <MapPin className="w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-3" />
+                      <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+                        Ready to Move!
+                      </h3>
+                      <p className="text-xs sm:text-sm opacity-90">
+                        {movementReason || `Earned ${pendingMovement} tiles from conversation`}
+                      </p>
                     </motion.div>
-                    <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">
-                      {isRolling ? 'Rolling...' : diceRoll ? `Rolled ${diceRoll}!` : 'Roll Dice'}
-                    </h3>
-                    <p className="text-xs sm:text-sm opacity-90">
-                      {diceRoll ? 'Turn ending...' : 'Move forward and end turn'}
-                    </p>
-                  </motion.button>
-
-                  {/* End Turn Button */}
-                  <motion.button
-                    variants={cardHoverVariants}
-                    whileHover="hover"
-                    whileTap="tap"
-                    onClick={nextTurn}
-                    className="p-4 sm:p-6 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow touch-manipulation"
-                  >
-                    <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-3" />
-                    <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">End Turn</h3>
-                    <p className="text-xs sm:text-sm opacity-90">Pass to next family member</p>
-                  </motion.button>
+                  )}
                 </div>
 
                 {/* Markets Grid */}
@@ -711,7 +628,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                         custom={index}
                         whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => handleMarketShopping(market.id)}
+                        onClick={() => handleMarketShopping(market.id, 0)}
                         className="p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 text-left transition-all hover:shadow-md touch-manipulation"
                       >
                         <div className="flex items-center gap-3 mb-2">
@@ -1103,10 +1020,10 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => { setShowEventModal(false); setTimeout(() => nextTurn(), 300) }}
+                onClick={() => setShowEventModal(false)}
                 className="px-4 sm:px-6 py-3 bg-gradient-to-r from-kopi-500 to-talk-500 text-white text-sm sm:text-base rounded-xl hover:from-kopi-600 hover:to-talk-600 transition-all duration-300 touch-manipulation"
               >
-                Continue Family Time!
+                Continue Roleplay!
               </motion.button>
             </div>
           </motion.div>

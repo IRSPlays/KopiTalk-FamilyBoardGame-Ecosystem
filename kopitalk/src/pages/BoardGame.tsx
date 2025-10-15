@@ -29,10 +29,9 @@ const BoardGame: React.FC = () => {
       setGameSession({
         id: `game_${Date.now()}`,
         difficulty: 'medium',
-        family_budget: 100,
+        family_budget: 0, // Start with zero money - earn through activities
         family_members: [],
         game_phase: 'family_setup',
-        current_player_index: 0,
         game_scenario: null,
         created_date: new Date().toISOString(),
         last_updated: new Date().toISOString()
@@ -75,10 +74,11 @@ const BoardGame: React.FC = () => {
         position: 0,
         points: 0,
         cash: 0,
-        ezlink_balance: 0
+        ezlink_balance: 0,
+        conversation_contributions: 0,
+        cultural_knowledge_score: 0
       })),
-      game_phase: 'board_setup',
-      current_player_index: 0
+      game_phase: 'board_building' // D.I.Y. board building first
     })
   }
 

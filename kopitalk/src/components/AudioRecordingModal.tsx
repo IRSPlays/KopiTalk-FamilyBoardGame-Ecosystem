@@ -230,7 +230,7 @@ const AudioRecordingModal: React.FC<Props> = ({ isOpen, onClose, onAnalysisCompl
           {!hasRecording && canRecord && (
             <button
               onClick={isRecording ? stopRecording : startRecording}
-              disabled={status === 'acquiring_media' || error === 'permission_denied'}
+              disabled={status !== 'idle' && status !== 'stopped' || error === 'permission_denied'}
               className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 isRecording
                   ? 'bg-red-500 hover:bg-red-600 text-white'

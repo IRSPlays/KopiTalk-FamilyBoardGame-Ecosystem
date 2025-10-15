@@ -1,4 +1,4 @@
-# 🇸🇬 KopiTalk - Family Board Game Ecosystem
+# 🇸🇬 SingaPlayGO - D.I.Y. Intergenerational Roleplay Board Game
 
 <div align="center">
 
@@ -10,24 +10,55 @@
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-1.19.0-orange.svg)](https://ai.google.dev/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**A next-generation family board game platform featuring AI-powered conversation analysis, computer vision for board state detection, and intergenerational gameplay experiences.**
+**A revolutionary D.I.Y. roleplay board game where families build custom boards, bridge generations through cooking, and experience Singapore life together. Elderly learn digital skills, youth discover traditional culture - all starting from zero money, earning through meaningful collaboration.**
 
-[🎮 Play Game](#-quick-start) • [📚 Documentation](#-documentation) • [🤖 AI Features](#-ai-integration) • [📱 Mobile Support](#-mobile-animation-system) • [🛠️ Setup](#-quick-start)
+[🎮 Start Building](#-quick-start) • [🎨 D.I.Y. Board Builder](#-diy-board-building) • [💰 Money Earning](#-money-earning-activities) • [🍳 Cooking Together](#-cooking-game-mode) • [🤖 AI Features](#-ai-integration)
 
 </div>
 
 ---
 
-## ✨ Features at a Glance
+## 🎯 **What Makes This Special?**
+
+### **🔨 D.I.Y. Custom Board Building**
+Players physically place tiles to create their own unique Singapore map - markets, MRT stations, cooking areas, photo spots. The ESP32-CAM captures your custom layout, and the AI validates it for gameplay!
+
+### **🤝 Intergenerational Bonding Through Cooking**
+- **Elderly → Youth**: Traditional wet market skills, cooking techniques, cultural stories
+- **Youth → Elderly**: Digital payments, self-order kiosks, MRT navigation, social media
+- **Common Ground**: Cooking Singapore heritage dishes together
+
+### **� Zero to Hero Economy**
+Everyone starts with **$0**. Earn money through:
+- 📸 **Photo Challenges** - Capture moments at markets, MRT, cooking ($10-20)
+- 📖 **Story Sharing** - Share family cooking memories ($10-20)
+- 🎯 **Cultural Quizzes** - Learn Singapore food heritage together ($5-15)
+- 📱 **Digital Skills** - Teach/learn mobile apps & payments ($8-15)
+- 🗣️ **Language Exchange** - Share dialects and slang ($5-10)
+- 🍳 **Cooking Tips** - Exchange traditional vs modern techniques ($10-20)
+- 🎭 **Market Roleplay** - Practice bargaining and shopping ($8-15)
+- 🚇 **Transport Navigation** - Plan MRT routes together ($10-18)
+- 🥗 **Healthy Eating** - Make nutritious choices as a family ($5-12)
+- 🏆 **Recipe Challenges** - Guess dishes from ingredients ($5-10)
+
+### **🎭 Continuous Roleplay (No Turns!)**
+Unlike traditional board games, everyone plays simultaneously. Movement is earned through **conversation quality** analyzed by AI - not dice rolls. The better you bond, the faster you progress!
+
+### **🍜 AI-Generated Dish Challenges**
+After building your board, AI creates a random Singapore traditional dish with specific ingredients. Navigate your custom board to collect them from markets or delivery, then complete the interactive cooking game!
+
+---
+
+## ✨ Key Features
 
 <div align="center">
 
-| 🎯 **Core Gameplay** | 🤖 **AI Integration** | 📱 **Mobile Experience** | 🇸🇬 **Singapore Culture** |
+| � **D.I.Y. Gameplay** | 🤖 **AI-Powered** | 📱 **Digital Life Skills** | 🇸🇬 **Cultural Bridge** |
 |:---------------------|:----------------------|:--------------------------|:---------------------------|
-| Turn-based family gameplay | Google Gemini 2.5-flash | 100+ touch-optimized animations | Authentic hawker center experience |
-| Real-time audio recording | 20k token context analysis | Device detection & 60fps performance | Traditional recipe preservation |
-| TikTok content creation | Multimodal vision processing | Swipe gestures & mobile UI | Public transport simulation |
-| Dynamic challenge system | Smart recommendations | Bottom sheets & responsive design | Cultural heritage learning |
+| Custom board building | Conversation analysis (1-5 movement) | Supermarket self-order kiosk | Wet market experiences |
+| Physical tile placement | AI dish generation | MRT navigation & EZ-Link | Traditional cooking methods |
+| ESP32 board capture | Topic suggestions pre-conversation | Mobile delivery apps | Heritage recipe preservation |
+| Collaborative roleplay | Photo/story AI analysis | Digital payment simulation | Intergenerational stories |
 
 </div>
 
@@ -157,18 +188,77 @@ npm run dev
 
 ---
 
-## 🌟 **Core Features Showcase**
+## 🌟 **Gameplay Components**
+
+### 🎨 **D.I.Y. Board Building**
+The `BoardBuilderModal` lets families physically create their own Singapore:
+- **Grid Sizes**: 6x6 to 15x15 customizable layouts
+- **9 Tile Types**: Start, markets (wet/super), MRT, bus stops, cooking stations, photo spots, challenges
+- **Drag & Drop**: Touch-friendly tile placement with visual grid
+- **Templates**: Pre-built layouts ('basic' 10×10, 'singapore' 12×12) or start from scratch
+- **Validation**: Ensures required tiles (start, market, cooking) are present
+- **ESP32 Integration**: Captures your physical board layout for digital gameplay
+
+### 💰 **Money Earning Activities**
+Start with **$0** and earn through 10+ collaborative activities:
+
+#### 📸 **Photo Challenge** (`PhotoChallenge.tsx`)
+- **5 Locations**: Wet market, supermarket, MRT, hawker center, cooking area
+- **Photo + Story**: Upload real photos, write family stories (500 chars)
+- **AI Analysis**: Keywords, story quality, collaboration bonus
+- **Earnings**: $10-20 based on authenticity and teamwork
+
+#### � **Story Sharing** (Coming Soon)
+Share family cooking memories and traditional recipes
+
+#### 🎯 **Cultural Quizzes** (Coming Soon)
+Learn Singapore food heritage together through interactive quizzes
+
+### 🛒 **Ingredient Collection**
+
+#### **Supermarket Self-Order Kiosk** (`SupermarketSelfOrder.tsx`)
+Teach elderly digital ordering skills through realistic simulation:
+- **20 Products**: Vegetables, meat, seafood, grains, condiments, dairy, spices
+- **8 Categories**: Touch-friendly navigation with icons
+- **Large Touch Targets**: Elderly-accessible buttons (py-4, text-lg)
+- **Required Highlighting**: Green ring shows needed ingredients
+- **Cart System**: Add, update quantity, remove with slide-in sidebar
+- **Payment Options**: Cash or card selection
+- **Validation**: Checks sufficient funds before checkout
+
+#### **Delivery App** (Existing)
+Navigate markets and delivery services for ingredient hunting
+
+### 🍳 **Cooking Game Mode** (`CookingGameMode.tsx`)
+Interactive cooking simulation with 2 methods (expandable to 6):
+
+#### **Steam Cooking**
+5-step process: Add water → Place ingredients → Cover pot → Steam 15s → Check doneness
+
+#### **Fry Cooking**
+5-step process with temperature control: Heat oil (40-80°) → Add ingredients → Stir fry → Flip → Check golden brown
+
+**Features:**
+- **Real-time Timer**: Countdown for each step with visual progress
+- **Temperature Control**: Auto-fluctuating ±5° every 2s (frying only)
+- **Scoring System**: Start at 100%, -10 for temp errors, -5 for timing errors
+- **Rewards**: Money + Points + Cultural Knowledge based on final score
+- **Step Validation**: Ensures correct actions at right moments
+
+**Future Methods:** Boil, Stir-fry, Grill, Bake
+
+---
+
+## 🤖 **AI Integration**
 
 <div align="center">
 
-| 🎯 **Feature** | 📱 **Mobile** | 🤖 **AI-Powered** | 🇸🇬 **Singapore** | 👥 **Family** |
-|:---------------|:-------------|:------------------|:------------------|:-------------|
-| **Touch-optimized UI** | ✅ 100+ animations | ✅ Device detection | 🎨 Cultural themes | 👨‍👩‍👧‍👦 2-4 players |
-| **Audio recording** | ✅ Real-time feedback | ✅ 20k token analysis | 🎙️ Conversation insights | 👂 Active listening |
-| **TikTok challenges** | ✅ Webcam integration | ✅ Performance analysis | 📱 Viral content | 🎬 Creative collaboration |
-| **Market simulation** | ✅ Touch navigation | ✅ Smart recommendations | 🏪 4 authentic markets | 🛒 Shopping decisions |
-| **Turn-based gameplay** | ✅ Visual indicators | ✅ Dynamic challenges | 🎲 Singapore board | ⚡ Auto-progression |
-| **Smart persistence** | ✅ 3-tier storage | ✅ Progress tracking | 💾 Game history | 📊 Family analytics |
+| 🗣️ **Conversation Analysis** | 🎨 **Content Generation** | 📊 **Quality Assessment** |
+|:---------------------------|:-------------------------|:------------------------|
+| Real-time audio recording | AI dish generation | Movement calculation (1-5 tiles) |
+| Google Gemini 2.5-flash | Topic suggestions | Photo/story analysis |
+| 20k token context | Random ingredient lists | Collaboration scoring |
+| Intergenerational insights | Cultural challenges | Quality multipliers |
 
 </div>
 

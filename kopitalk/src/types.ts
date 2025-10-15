@@ -1,29 +1,35 @@
 export interface GameSession {
   id: string
   difficulty: string
-  family_budget: number
+  family_budget: number // Starts at $0 - earned through activities
   family_members: FamilyMember[]
   game_phase: string
-  current_player_index: number
+  // REMOVED: current_player_index - No turn-based system, roleplay is continuous
   game_scenario: any
   challenges_completed?: any[]
-  total_turns?: number
   game_events?: any[]
   created_date: string
   last_updated: string
+  // NEW: D.I.Y. board configuration
+  custom_board?: CustomBoard
+  // NEW: AI-generated dish challenge
+  main_dish_challenge?: DishChallenge
 }
 
 export interface FamilyMember {
   name: string
-  role: 'son' | 'daughter' | 'grandfather' | 'grandmother'
-  position: number
+  role: 'son' | 'daughter' | 'grandfather' | 'grandmother' | 'parent' | 'child' | 'youth' | 'elderly'
+  position: number // Position on custom D.I.Y. board
   points: number
-  cash: number
-  money: number
-  ezlink_balance: number
+  cash: number // Starts at $0 - earned through activities
+  money: number // Starts at $0 - earned through activities
+  ezlink_balance: number // Separate from main money - for MRT/Bus only
   ingredients?: number
   social_points?: number
   tikTokFollowers?: number
+  // NEW: Track player's contribution to roleplay
+  conversation_contributions?: number
+  cultural_knowledge_score?: number
 }
 
 export interface Market {
@@ -181,4 +187,90 @@ export interface PaymentMethod {
   type: 'tiktok_money' | 'family_budget' | 'ezlink' | 'cash'
   amount: number
   available: boolean
+}
+
+// D.I.Y. Board Building Types
+export interface CustomBoard {
+  id: string
+  name: string
+  grid_size: { width: number; height: number } // e.g., 10x10 grid
+  tiles: BoardTile[]
+  created_at: string
+}
+
+export interface BoardTile {
+  id: string
+  type: 'start' | 'market' | 'wet_market' | 'mrt' | 'bus_stop' | 'cooking_station' | 'photo_spot' | 'challenge' | 'empty'
+  position: { x: number; y: number }
+  properties?: {
+    name?: string
+    icon?: string
+    action?: string
+    reward?: number
+  }
+}
+
+// AI-Generated Dish Challenge Types
+export interface DishChallenge {
+  id: string
+  dish_name: string
+  dish_type: 'singapore_traditional' | 'fusion' | 'hawker' | 'heritage'
+  description: string
+  difficulty: 'easy' | 'medium' | 'hard' | 'expert'
+  ingredients: Ingredient[]
+  cooking_method: 'steam' | 'fry' | 'boil' | 'bake' | 'stir_fry' | 'grill'
+  cooking_steps: string[]
+  cultural_context: string
+  estimated_time: number // in minutes
+  affected_by_weather?: boolean
+  affected_by_price?: boolean
+  completion_reward: {
+    money: number
+    points: number
+    cultural_knowledge: number
+  }
+}
+
+export interface Ingredient {
+  name: string
+  quantity: string
+  unit: string
+  category: 'vegetable' | 'meat' | 'seafood' | 'spice' | 'sauce' | 'grain' | 'other'
+  is_collected: boolean
+  source?: 'supermarket' | 'wet_market' | 'delivery' | 'already_owned'
+  estimated_cost: number
+  actual_cost?: number
+}
+
+// Conversation Topic Suggestion Types
+export interface ConversationTopic {
+  id: string
+  topic: string
+  category: 'cooking' | 'family' | 'culture' | 'technology' | 'tradition' | 'singapore_life'
+  difficulty: 'easy' | 'medium' | 'hard'
+  tailored_for_role?: 'elderly' | 'youth' | 'parent' | 'child'
+  expected_movement_range: { min: number; max: number } // tiles (1-5)
+  prompts: string[]
+}
+
+// Money Earning Activity Types
+export interface MoneyEarningActivity {
+  id: string
+  name: string
+  type: 'photo_challenge' | 'story_sharing' | 'recipe_guessing' | 'digital_payment_sim' | 'cultural_quiz' | 'cooking_tips' | 'market_bargaining' | 'transport_navigation' | 'healthy_eating' | 'language_exchange'
+  description: string
+  requires_collaboration: boolean
+  reward: number
+  difficulty: 'easy' | 'medium' | 'hard'
+  completion_criteria: string
+  creates_common_ground: string // How it bridges generations
+}
+
+// Roleplay State Types
+export interface RoleplayState {
+  active_players: string[] // Player IDs actively participating
+  current_location: string // Current board position description
+  ongoing_activities: string[]
+  collaborative_score: number // 0-100
+  conversation_quality: number // 0-100
 }

@@ -6,6 +6,8 @@ import DeliveryApp from './pages/DeliveryApp'
 import CookingGame from './pages/CookingGame'
 import BusTimings from './pages/BusTimings'
 import EZLinkTopUp from './pages/EZLinkTopUp'
+import SupermarketSelfOrder from './pages/SupermarketSelfOrder'
+import CookingGameMode from './pages/CookingGameMode'
 
 function App() {
   return (
@@ -17,6 +19,20 @@ function App() {
         <Route path="/cooking" element={<CookingGame />} />
         <Route path="/bus" element={<BusTimings />} />
         <Route path="/ezlink" element={<EZLinkTopUp />} />
+        <Route path="/supermarket-self-order" element={<SupermarketSelfOrder />} />
+        <Route path="/cooking-game" element={<CookingGameMode dish={{ 
+          id: 'test',
+          dish_name: 'Test Dish',
+          dish_type: 'singapore_traditional',
+          description: 'A test dish',
+          difficulty: 'easy',
+          ingredients: [],
+          cooking_method: 'fry',
+          cooking_steps: [],
+          cultural_context: 'Test',
+          estimated_time: 30,
+          completion_reward: { money: 50, points: 100, cultural_knowledge: 30 }
+        }} collectedIngredients={[]} onComplete={() => {}} />} />
       </Routes>
     </div>
   )

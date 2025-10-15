@@ -54,42 +54,44 @@ export const gameStorage = {
   },
 
   // Create new game with proper initialization
+  // PURPOSE: D.I.Y. roleplay board game - players start with ZERO money and earn through activities
   createGame(difficulty: string, players: any[]): GameSession {
-    const budgetMap: Record<string, number> = {
-      easy: 100,
-      medium: 75,
-      hard: 50,
-      expert: 25
-    }
-
+    // REMOVED: Starting budget - all players start with $0 and earn through collaboration
+    // Money is earned through: TikTok trends, photo challenges, story sharing, cultural activities
+    
     const game: GameSession = {
       id: `game_${Date.now()}`,
       difficulty,
-      family_budget: budgetMap[difficulty] || 75,
+      family_budget: 0, // START WITH ZERO - earn through activities
       family_members: players.map((player, index) => ({
         ...player,
-        position: 0,
+        position: 0, // Starting position on custom D.I.Y. board
         points: 0,
-        cash: budgetMap[difficulty] || 75,
-        ezlink_balance: 10,
-        inventory: [],
-        conversation_count: 0,
-        video_count: 0,
-        delivery_count: 0,
+        cash: 0, // START WITH ZERO - earn through roleplay activities
+        money: 0, // START WITH ZERO
+        ezlink_balance: 0, // START WITH ZERO - must top up via app (separate from main money)
+        ingredients: 0,
+        social_points: 0,
+        tikTokFollowers: 0,
+        conversation_contributions: 0,
+        cultural_knowledge_score: 0,
         index
       })),
-      game_phase: 'family_setup',
-      current_player_index: 0,
+      game_phase: 'board_building', // First phase: build D.I.Y. board
+      // REMOVED: current_player_index - no turn-based system, continuous roleplay
       game_scenario: null,
       challenges_completed: [],
-      total_turns: 0,
       game_events: [],
       created_date: new Date().toISOString(),
-      last_updated: new Date().toISOString()
+      last_updated: new Date().toISOString(),
+      // NEW: Will be set during board building phase
+      custom_board: undefined,
+      // NEW: Will be AI-generated after board setup
+      main_dish_challenge: undefined
     }
 
     this.saveGame(game)
-    console.log('✅ New game created:', game.id)
+    console.log('✅ New roleplay game created (zero money start):', game.id)
     return game
   },
 
