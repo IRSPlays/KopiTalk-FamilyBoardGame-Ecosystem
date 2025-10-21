@@ -1,12 +1,14 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2, HelpCircle,
   CreditCard, DollarSign, CheckCircle, Package, Filter, X,
-  Sparkles, TrendingUp, Users, Monitor, BookOpen, Gamepad2
+  Sparkles, TrendingUp, Users, Monitor, BookOpen, Gamepad2, Clock, AlertTriangle
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
+import { navigateToGame } from '../utils/navigationHelper'
 
 interface Product {
   id: string
@@ -47,6 +49,10 @@ const SupermarketSelfOrder: React.FC = () => {
   const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome')
   const [tutorialActive, setTutorialActive] = useState(true)
   const [completedSteps, setCompletedSteps] = useState<Set<TutorialStep>>(new Set())
+  
+  // ✅ NEW: Shopping timer (3 minutes = 180 seconds)
+  const [timeRemaining, setTimeRemaining] = useState(180)
+  const [timerActive, setTimerActive] = useState(false)
 
   // Helper function to check if ingredient is already collected
   const isIngredientCollected = (itemName: string): boolean => {
@@ -131,6 +137,43 @@ const SupermarketSelfOrder: React.FC = () => {
     { id: 'dairy', name: 'Eggs & Dairy', icon: '🥚' },
     { id: 'spices', name: 'Spices', icon: '🌶️' },
   ]
+
+  // ✅ NEW: Timer countdown effect
+  useEffect(() => {
+    if (!timerActive || timeRemaining <= 0) return
+
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          setTimerActive(false)
+          toast.error('⏰ Time\'s up! Shopping time expired!', { duration: 5000 })
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [timerActive, timeRemaining])
+
+  // Start timer when tutorial completes
+  useEffect(() => {
+    if (tutorialStep === 'search' && !timerActive) {
+      setTimerActive(true)
+      toast.success('⏰ Timer started! Complete shopping in 3 minutes', { icon: '🏃', duration: 3000 })
+    }
+  }, [tutorialStep])
+  
+  // ✅ NEW: Time warning notifications
+  useEffect(() => {
+    if (timeRemaining === 60) {
+      toast('⏰ 1 minute remaining!', { icon: '⚠️', duration: 3000 })
+    } else if (timeRemaining === 30) {
+      toast.error('🚨 Only 30 seconds left!', { icon: '⏰', duration: 4000 })
+    } else if (timeRemaining === 10) {
+      toast.error('🚨 10 SECONDS!', { icon: '⚡', duration: 3000 })
+    }
+  }, [timeRemaining])
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -221,17 +264,32 @@ const SupermarketSelfOrder: React.FC = () => {
 
   // Cart functions
   const addToCart = (product: Product) => {
-    if (product.alreadyCollected) return
+    if (product.alreadyCollected) {
+      toast.error(`${product.name} already collected!`, {
+        icon: '⚠️',
+      })
+      return
+    }
     
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id)
       if (existing) {
+        // ✅ Toast for quantity increase
+        toast.success(`Added 1 more ${product.name}`, {
+          icon: '🛒',
+          duration: 2000,
+        })
         return prev.map(item =>
           item.id === product.id
             ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
             : item
         )
       }
+      // ✅ Toast for new item
+      toast.success(`${product.name} added to cart!`, {
+        icon: '✅',
+        duration: 2500,
+      })
       return [...prev, { ...product, quantity: 1 }]
     })
 
@@ -309,7 +367,7 @@ const SupermarketSelfOrder: React.FC = () => {
       
       // Show success modal after brief delay
       setTimeout(() => {
-        navigate('/game')
+        navigateToGame(navigate)
       }, 3000)
     }, 2000)
   }
@@ -379,7 +437,7 @@ const SupermarketSelfOrder: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <motion.button
-              onClick={() => navigate('/game')}
+              onClick={() => navigateToGame(navigate)}
               className="flex items-center gap-2 px-4 py-3 bg-white/20 hover:bg-white/30 rounded-xl transition-colors text-lg min-h-[44px]"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -389,6 +447,27 @@ const SupermarketSelfOrder: React.FC = () => {
             </motion.button>
 
             <div className="flex items-center gap-3">
+              {/* ✅ NEW: Timer Display */}
+              {timerActive && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold ${
+                    timeRemaining <= 30 
+                      ? 'bg-red-500 animate-pulse' 
+                      : timeRemaining <= 60 
+                      ? 'bg-orange-500' 
+                      : 'bg-white/20'
+                  }`}
+                >
+                  <Clock className="w-5 h-5" />
+                  <span className="text-lg">
+                    {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+                  </span>
+                  {timeRemaining <= 30 && <AlertTriangle className="w-5 h-5 animate-bounce" />}
+                </motion.div>
+              )}
+              
               <div className="text-right">
                 <p className="text-sm opacity-90">Budget</p>
                 <p className="text-lg font-bold">${family_budget.toFixed(2)}</p>
@@ -456,6 +535,29 @@ const SupermarketSelfOrder: React.FC = () => {
               </div>
             </div>
           </div>
+          
+          {/* ✅ NEW: Time Warning Banner */}
+          {timerActive && timeRemaining <= 60 && (
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className={`rounded-xl p-4 mb-4 flex items-center gap-3 ${
+                timeRemaining <= 30 
+                  ? 'bg-red-100 border-2 border-red-500' 
+                  : 'bg-orange-100 border-2 border-orange-500'
+              }`}
+            >
+              <AlertTriangle className={`w-6 h-6 ${timeRemaining <= 30 ? 'text-red-600 animate-bounce' : 'text-orange-600'}`} />
+              <div className="flex-1">
+                <p className={`font-bold ${timeRemaining <= 30 ? 'text-red-900' : 'text-orange-900'}`}>
+                  {timeRemaining <= 30 ? '⚠️ HURRY UP!' : '⏰ Time Running Low'}
+                </p>
+                <p className={`text-sm ${timeRemaining <= 30 ? 'text-red-700' : 'text-orange-700'}`}>
+                  Only {timeRemaining} seconds remaining to complete your shopping!
+                </p>
+              </div>
+            </motion.div>
+          )}
         </motion.div>
       )}
 
@@ -833,7 +935,7 @@ const SupermarketSelfOrder: React.FC = () => {
                 </ul>
               </div>
               <motion.button
-                onClick={() => navigate('/game')}
+                onClick={() => navigateToGame(navigate)}
                 className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 min-h-[44px]"
                 whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(168, 85, 247, 0.4)" }}
                 whileTap={{ scale: 0.98 }}

@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useAnimation } from 'framer-motion'
 import { GameSession, FamilyMember } from '../types'
 import { 
-  Users, Mic, Camera, ShoppingCart, ChefHat, Bus, CreditCard,
+  Users, Mic, Camera, ShoppingCart, ChefHat, Bus, CreditCard, Train,
   Crown, Heart, Sparkles, DollarSign, ArrowRight, Package, Timer, Trophy,
   Gift, MapPin, Clock, Zap, Target, Activity, TrendingUp,
   Settings, Home, Play, Pause, RotateCcw, CheckCircle,
@@ -18,7 +18,9 @@ import ESP32BoardIntegration from './ESP32BoardIntegration'
 import GameSettingsPanel from './GameSettingsPanel'
 import ChallengeBanner from './ChallengeBanner'
 import Breadcrumb from './Breadcrumb'
+import MRTStation from './MRTStation'
 import { ConversationAnalysis, VideoAnalysis, RandomEvent, getRandomEvent } from '../utils/geminiApi'
+import { useGameStore } from '../stores/gameStore'
 
 interface Props {
   gameSession: GameSession
@@ -65,9 +67,20 @@ interface Market {
 const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
   const navigate = useNavigate()
   
+  // ✅ FIX: Get family_budget from Zustand store (source of truth)
+  const family_budget = useGameStore(state => state.family_budget)
+  
+  // ✅ FIX: Sync gameSession.family_budget with Zustand store on mount
+  useEffect(() => {
+    if (gameSession.family_budget !== undefined && gameSession.family_budget !== family_budget) {
+      useGameStore.setState({ family_budget: gameSession.family_budget })
+    }
+  }, [gameSession.family_budget])
+  
   // Core game state
   const [showAudioModal, setShowAudioModal] = useState(false)
   const [showTikTokModal, setShowTikTokModal] = useState(false)
+  const [showEZLinkModal, setShowEZLinkModal] = useState(false)
   const [currentEvent, setCurrentEvent] = useState<RandomEvent | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
   const [pendingMovement, setPendingMovement] = useState<number>(0)
@@ -87,9 +100,16 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
     }, 3000)
   }
   
-  // Enhanced features state
-  const [activeTab, setActiveTab] = useState<'main' | 'features' | 'challenges' | 'stats' | 'ai' | 'advanced' | 'board' | 'settings'>('main')
+  // ✅ SIMPLIFIED: Only 3 tabs - Main, Statistics, Settings
+  const [activeTab, setActiveTab] = useState<'main' | 'stats' | 'settings'>('main')
   const [selectedModule, setSelectedModule] = useState<SingaporeLifeModule | null>(null)
+  
+  // ✅ Pull real stats from Zustand store
+  const completedActivities = useGameStore(state => state.completedActivities)
+  const collectedIngredients = useGameStore(state => state.collectedIngredients)
+  const total_conversations = useGameStore(state => state.total_conversations)
+  const bonding_level = useGameStore(state => state.bonding_level)
+  
   const [gameStats, setGameStats] = useState<GameStats>({
     totalPlayTime: 0,
     featuresUsed: 0,
@@ -386,40 +406,34 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
     }
   }
 
-  // Tab Navigation Component
+  // ✅ REVAMPED: Simplified Tab Navigation (Only 3 tabs)
   const TabNavigation = () => (
     <motion.div 
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
-      className="bg-white rounded-2xl p-2 sm:p-4 shadow-lg mb-4 sm:mb-6 overflow-x-auto"
+      className="bg-white rounded-2xl p-3 sm:p-4 shadow-lg mb-6"
     >
-      <div className="flex items-center gap-1 sm:gap-2 min-w-max sm:min-w-0">
+      <div className="flex items-center justify-center gap-3 sm:gap-4">
         {[
-          { id: 'main', label: 'Main', fullLabel: 'Main Game', icon: Gamepad2 },
-          { id: 'features', label: 'Life', fullLabel: 'Singapore Life', icon: MapPin },
-          { id: 'challenges', label: 'Tasks', fullLabel: 'Challenges', icon: Trophy },
-          { id: 'stats', label: 'Stats', fullLabel: 'Statistics', icon: TrendingUp },
-          { id: 'ai', label: 'AI', fullLabel: 'AI Assistant', icon: Brain },
-          { id: 'advanced', label: 'Extra', fullLabel: 'Advanced', icon: Zap },
-          { id: 'board', label: 'Board', fullLabel: 'Smart Board', icon: Eye },
-          { id: 'settings', label: 'Settings', fullLabel: 'Settings', icon: Settings }
+          { id: 'main', label: 'Game Actions', icon: Gamepad2, color: 'from-blue-500 to-purple-500' },
+          { id: 'stats', label: 'Statistics', icon: TrendingUp, color: 'from-green-500 to-emerald-500' },
+          { id: 'settings', label: 'Settings', icon: Settings, color: 'from-gray-500 to-slate-500' }
         ].map(tab => (
           <motion.button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-xl transition-all touch-manipulation ${
+            className={`flex-1 max-w-xs flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-all shadow-md ${
               activeTab === tab.id 
-                ? 'bg-gradient-to-r from-kopi-500 to-talk-500 text-white shadow-md' 
+                ? `bg-gradient-to-r ${tab.color} text-white` 
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <tab.icon className="w-4 h-4 flex-shrink-0" />
-            <span className="font-medium text-xs sm:text-sm whitespace-nowrap">
-              <span className="hidden sm:inline">{tab.fullLabel}</span>
-              <span className="sm:hidden">{tab.label}</span>
+            <tab.icon className="w-5 h-5" />
+            <span className="font-semibold text-sm sm:text-base">
+              {tab.label}
             </span>
           </motion.button>
         ))}
@@ -459,7 +473,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
             </div>
             <div className="text-left sm:text-right">
               <p className="text-xs sm:text-sm text-gray-500">Family Budget</p>
-              <p className="text-xl sm:text-2xl font-bold text-green-600">${gameSession.family_budget}</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">${family_budget.toFixed(2)}</p>
             </div>
           </div>
         </motion.div>
@@ -630,7 +644,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                     variants={cardHoverVariants}
                     whileHover="hover"
                     whileTap="tap"
-                    onClick={() => handleMarketShopping('supermarket', 0)}
+                    onClick={() => navigate('/supermarket')}
                     className="p-4 sm:p-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
                   >
                     <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
@@ -656,7 +670,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                     variants={cardHoverVariants}
                     whileHover="hover"
                     whileTap="tap"
-                    onClick={() => alert('Cooking game starting soon!')}
+                    onClick={() => navigate('/cooking-challenge')}
                     className="p-4 sm:p-5 bg-gradient-to-br from-yellow-500 to-orange-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
                   >
                     <ChefHat className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
@@ -665,16 +679,20 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                   </motion.button>
 
                   {/* MRT TRANSPORT */}
+                                    {/* ✅ UNIFIED EZ-LINK: MRT Travel + Card Management */}
                   <motion.button
                     variants={cardHoverVariants}
                     whileHover="hover"
                     whileTap="tap"
-                    onClick={() => startModule(singaporeLifeModules.find(m => m.id === 'transport')!)}
-                    className="p-4 sm:p-5 bg-gradient-to-br from-red-500 to-red-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                    onClick={() => setShowEZLinkModal(true)}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
                   >
-                    <Bus className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
-                    <h3 className="font-semibold text-sm sm:text-base mb-1">MRT Station</h3>
-                    <p className="text-xs opacity-90">Use transport system</p>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <CreditCard className="w-6 h-6 sm:w-7 sm:h-7" />
+                      <Train className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">EZ-Link</h3>
+                    <p className="text-xs opacity-90">MRT travel & top-up</p>
                   </motion.button>
 
                   {/* ACTIVITIES HUB */}
@@ -688,19 +706,6 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                     <Activity className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
                     <h3 className="font-semibold text-sm sm:text-base mb-1">Activities Hub</h3>
                     <p className="text-xs opacity-90">Bonding activities</p>
-                  </motion.button>
-
-                  {/* EZLINK TOP-UP */}
-                  <motion.button
-                    variants={cardHoverVariants}
-                    whileHover="hover"
-                    whileTap="tap"
-                    onClick={() => alert('EZ-Link management coming soon!')}
-                    className="p-4 sm:p-5 bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
-                  >
-                    <CreditCard className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
-                    <h3 className="font-semibold text-sm sm:text-base mb-1">EZ-Link Card</h3>
-                    <p className="text-xs opacity-90">Top-up & manage card</p>
                   </motion.button>
                 </div>
 
@@ -725,125 +730,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
               </motion.div>
             )}
 
-            {/* Singapore Life Features Tab */}
-            {activeTab === 'features' && (
-              <motion.div
-                key="features-tab"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg"
-              >
-                <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Singapore Life Modules
-                </h2>
-                
-                <div className="grid md:grid-cols-2 gap-6">
-                  {singaporeLifeModules.map((module) => (
-                    <div
-                      key={module.id}
-                      className="p-6 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all"
-                    >
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <module.icon className="w-8 h-8 text-gray-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-bold text-xl text-gray-900 mb-2">{module.name}</h3>
-                          <p className="text-gray-600 text-sm leading-relaxed mb-3">{module.description}</p>
-                          
-                          {/* Rewards Preview */}
-                          <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-                            <span className="flex items-center gap-1">
-                              <DollarSign className="w-3 h-3" />
-                              ${module.rewards.money}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Trophy className="w-3 h-3" />
-                              {module.rewards.points}pts
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <ArrowRight className="w-3 h-3" />
-                              +{module.rewards.movement}
-                            </span>
-                          </div>
-
-                          {/* Skills Preview */}
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {module.rewards.skills.map(skill => (
-                              <span key={skill} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => startModule(module)}
-                          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-all"
-                        >
-                          Start Challenge
-                        </button>
-                        
-                        <button
-                          onClick={() => completeModule(module.id)}
-                          className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all"
-                        >
-                          ✓ Complete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Singapore Culture Learning Section */}
-                <div className="mt-8 p-6 bg-gradient-to-r from-red-50 to-blue-50 rounded-2xl border border-red-200">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <Gift className="w-6 h-6 text-red-500" />
-                    Cultural Learning Bonus
-                  </h3>
-                  <p className="text-gray-700 mb-4">
-                    Complete all Singapore Life modules to unlock special cultural knowledge bonuses and family heritage achievements!
-                  </p>
-                  <div className="grid md:grid-cols-3 gap-4 text-sm">
-                    <div className="bg-white p-3 rounded-lg border border-red-200">
-                      <strong className="text-red-900">Heritage Master:</strong> Master all traditional recipes and cooking techniques
-                    </div>
-                    <div className="bg-white p-3 rounded-lg border border-blue-200">
-                      <strong className="text-blue-900">Transport Expert:</strong> Navigate Singapore like a true local
-                    </div>
-                    <div className="bg-white p-3 rounded-lg border border-green-200">
-                      <strong className="text-green-900">Digital Citizen:</strong> Master modern Singapore living skills
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Challenges Tab */}
-            {activeTab === 'challenges' && (
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
-                <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                  <Trophy className="w-5 h-5" />
-                  Family Challenges
-                </h2>
-                
-                <div className="text-center py-12">
-                  <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-500 mb-2">Dynamic Challenges Coming Soon!</h3>
-                  <p className="text-gray-400 max-w-md mx-auto">
-                    AI-generated family challenges based on your conversations and Singapore cultural activities will appear here.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Statistics Tab */}
+            {/* Statistics Tab - ✅ Shows REAL data from Zustand store */}
             {activeTab === 'stats' && (
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <h2 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
@@ -853,114 +740,62 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                 
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                   <div className="text-center p-4 bg-blue-50 rounded-xl">
-                    <Clock className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-blue-600">{gameStats.totalPlayTime}m</div>
-                    <div className="text-sm text-blue-600">Play Time</div>
+                    <Mic className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-blue-600">{total_conversations}</div>
+                    <div className="text-sm text-blue-600">Conversations</div>
                   </div>
                   <div className="text-center p-4 bg-green-50 rounded-xl">
-                    <Activity className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-green-600">{gameStats.featuresUsed}</div>
-                    <div className="text-sm text-green-600">Features Used</div>
+                    <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-green-600">{completedActivities.length}</div>
+                    <div className="text-sm text-green-600">Activities Done</div>
                   </div>
                   <div className="text-center p-4 bg-purple-50 rounded-xl">
-                    <Target className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-purple-600">{gameStats.challengesCompleted}</div>
-                    <div className="text-sm text-purple-600">Challenges</div>
+                    <ShoppingCart className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-purple-600">{collectedIngredients.length}</div>
+                    <div className="text-sm text-purple-600">Ingredients</div>
                   </div>
                   <div className="text-center p-4 bg-orange-50 rounded-xl">
-                    <Sparkles className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-orange-600">{gameStats.culturalKnowledge}%</div>
-                    <div className="text-sm text-orange-600">Culture Score</div>
+                    <Heart className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-orange-600">{Math.round(bonding_level)}</div>
+                    <div className="text-sm text-orange-600">Bonding Level</div>
                   </div>
                 </div>
 
-                {/* Skills Learned */}
+                {/* Family Budget & Money Earned */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
+                  <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    Family Budget
+                  </h3>
+                  <div className="text-3xl font-bold text-green-600">${family_budget.toFixed(2)}</div>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Earned through conversations, activities, and challenges!
+                  </p>
+                </div>
+
+                {/* Recent Activities */}
                 <div className="mb-6">
-                  <h3 className="font-semibold text-gray-800 mb-3">Skills Learned</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {gameStats.skillsLearned.length > 0 ? gameStats.skillsLearned.map(skill => (
-                      <span key={skill} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                        {skill}
-                      </span>
+                  <h3 className="font-semibold text-gray-800 mb-3">Recent Activities</h3>
+                  <div className="space-y-2">
+                    {completedActivities.length > 0 ? completedActivities.slice(-5).reverse().map((activity, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <Activity className="w-5 h-5 text-blue-500" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-800 capitalize">{activity.type.replace(/_/g, ' ')}</p>
+                          <p className="text-xs text-gray-500">{new Date(activity.timestamp).toLocaleDateString()}</p>
+                        </div>
+                        <span className="text-sm font-semibold text-green-600">
+                          +${activity.earnings.toFixed(2)}
+                        </span>
+                      </div>
                     )) : (
-                      <p className="text-gray-500 italic">Start completing challenges to learn new skills!</p>
+                      <p className="text-gray-500 italic text-center py-4">
+                        Start playing to see your activities here!
+                      </p>
                     )}
                   </div>
                 </div>
-
-                {/* Progress Chart Placeholder */}
-                <div className="p-6 bg-gray-50 rounded-xl text-center">
-                  <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <h4 className="font-semibold text-gray-600 mb-2">Progress Analytics</h4>
-                  <p className="text-gray-500 text-sm">Detailed progress charts and family engagement metrics coming soon!</p>
-                </div>
               </div>
-            )}
-
-            {/* AI Assistant Tab */}
-            {activeTab === 'ai' && (
-              <AdvancedAIIntegration 
-                gameSession={gameSession}
-                onApplyRecommendation={(recommendation) => {
-                  // Handle AI recommendation application
-                  console.log('Applying recommendation:', recommendation)
-                  // You could add logic here to automatically trigger the recommended module
-                }}
-                onStartAIChallenge={(challenge) => {
-                  // Handle AI-generated challenge
-                  console.log('Starting AI challenge:', challenge)
-                }}
-              />
-            )}
-
-            {/* Advanced Features Tab */}
-            {activeTab === 'advanced' && (
-              <div className="space-y-6">
-                {/* Enhanced Challenge System */}
-                <ChallengeSystem 
-                  gameSession={gameSession}
-                  onUpdateGame={onUpdateGame}
-                  onCompleteChallenge={(challengeId, rewards) => {
-                    // Apply challenge rewards to family members
-                    const updatedMembers = gameSession.family_members.map(member => ({
-                      ...member,
-                      money: member.money + Math.floor(rewards.money / gameSession.family_members.length),
-                      points: member.points + Math.floor(rewards.points / gameSession.family_members.length)
-                    }))
-                    
-                    onUpdateGame({ 
-                      family_members: updatedMembers
-                    })
-                    
-                    // Show completion message
-                    alert(`🎉 Challenge completed!\n\n💰 Each family member earned $${Math.floor(rewards.money / gameSession.family_members.length)}\n⭐ Each family member earned ${Math.floor(rewards.points / gameSession.family_members.length)} points!\n📚 Cultural Knowledge: +${rewards.culturalKnowledge}%\n❤️ Family Bonding: +${rewards.familyBondingBonus}`)
-                  }}
-                />
-                
-                {/* Enhanced Statistics Dashboard */}
-                <EnhancedGameStatistics 
-                  gameSession={gameSession}
-                  onViewDetail={(section) => {
-                    console.log('Viewing detailed stats for:', section)
-                    // Could open a detailed modal or navigate to a specific section
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Smart Board Integration Tab */}
-            {activeTab === 'board' && (
-              <ESP32BoardIntegration 
-                gameSession={gameSession}
-                onBoardStateUpdate={(newState) => {
-                  onUpdateGame(newState)
-                  showNotification('Board state updated from camera!', 'success')
-                }}
-                onDetectionEvent={(detection) => {
-                  console.log('Board detection event:', detection)
-                  // Could trigger specific game events based on detection
-                }}
-              />
             )}
 
             {/* Settings Tab */}
@@ -1106,6 +941,19 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
         </motion.div>
       )}
       </AnimatePresence>
+
+      {/* ✅ UNIFIED EZ-LINK MODAL: MRT + Card Management */}
+      {showEZLinkModal && (
+        <MRTStation
+          currentPlayerId={0}
+          onClose={() => setShowEZLinkModal(false)}
+          onTravelComplete={(destination) => {
+            console.log('Travel complete to:', destination)
+            // Update player position on board
+            setShowEZLinkModal(false)
+          }}
+        />
+      )}
     </div>
   )
 }

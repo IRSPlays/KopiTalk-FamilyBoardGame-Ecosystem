@@ -37,29 +37,36 @@ const ChallengeBanner: React.FC = () => {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <motion.div
-              animate={{ rotate: [0, -10, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-            >
-              <ChefHat className="w-8 h-8" />
-            </motion.div>
-            <div>
-              <h2 className="text-2xl font-bold">Today's Family Challenge</h2>
-              <p className="text-purple-100 text-sm">Cook together and bond as a family!</p>
-            </div>
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-5">
+        <div className="flex items-center gap-3 mb-3">
+          <motion.div
+            animate={{ rotate: [0, -10, 10, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >
+            <ChefHat className="w-8 h-8" />
+          </motion.div>
+          <div>
+            <h2 className="text-lg font-semibold">Today's Family Challenge</h2>
           </div>
-          <div className="text-right">
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="w-4 h-4" />
-              <span>{dishChallenge.estimated_time} mins</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm mt-1">
-              <TrendingUp className="w-4 h-4" />
-              <span className="capitalize">{dishChallenge.difficulty_level}</span>
-            </div>
+        </div>
+        
+        {/* ✅ FIX: Dish Name Prominently Displayed */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-yellow-300" />
+            <h1 className="text-3xl font-extrabold tracking-tight">{dishChallenge.dish_name}</h1>
+          </div>
+          <p className="text-purple-100 text-sm mt-1 ml-8">Cook together and bond as a family!</p>
+        </div>
+
+        <div className="flex items-center gap-6 ml-8 text-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            <span>{dishChallenge.estimated_time} mins</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            <span className="capitalize">{dishChallenge.difficulty_level}</span>
           </div>
         </div>
       </div>
@@ -69,11 +76,7 @@ const ChallengeBanner: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left: Dish Info */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-purple-600" />
-              <h3 className="text-xl font-bold text-gray-900">{dishChallenge.dish_name}</h3>
-            </div>
-            
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">About This Dish</h3>
             <p className="text-gray-700 mb-4 leading-relaxed">{dishChallenge.description}</p>
             
             <div className="bg-white rounded-lg p-4 shadow-sm">

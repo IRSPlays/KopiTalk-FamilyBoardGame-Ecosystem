@@ -9,6 +9,7 @@ import BoardSetupModal from '../components/BoardSetupModal'
 import GameplayInterface from '../components/GameplayInterface'
 import GameStartChallenge from '../components/GameStartChallenge'
 import { useGameStore } from '../stores/gameStore'
+import { setCurrentGameSession } from '../utils/navigationHelper'
 
 const BoardGame: React.FC = () => {
   const { sessionId } = useParams()
@@ -20,6 +21,9 @@ const BoardGame: React.FC = () => {
 
   useEffect(() => {
     if (sessionId) {
+      // ✅ CRITICAL FIX: Store session ID immediately from URL
+      setCurrentGameSession(sessionId)
+      
       // Load existing game
       const game = gameStorage.getGame(sessionId)
       if (game) {
@@ -57,23 +61,42 @@ const BoardGame: React.FC = () => {
     setGameSession(updatedGame)
     gameStorage.saveGame(updatedGame)
     
+    // ✅ FIX: Sync family_budget changes with Zustand store
+    if (updates.family_budget !== undefined) {
+      const currentStoreBudget = useGameStore.getState().family_budget
+      const budgetDifference = updates.family_budget - (gameSession.family_budget || 0)
+      
+      // Update store budget to match session budget
+      if (currentStoreBudget !== updates.family_budget) {
+        useGameStore.setState({ family_budget: updates.family_budget })
+      }
+    }
+    
     // Update URL if we just created a new game
     if (!sessionId && updatedGame.id) {
+      setCurrentGameSession(updatedGame.id) // ✅ Store for navigation
       navigate(`/game/${updatedGame.id}`, { replace: true })
+    } else if (updatedGame.id) {
+      setCurrentGameSession(updatedGame.id) // ✅ Store current session
     }
   }
 
   const handleFamilySetupComplete = (difficulty: string, players: any[]) => {
     const budgetMap: Record<string, number> = {
-      easy: 0,
-      medium: 0,
-      hard: 0,
-      expert: 0
+      easy: 20,   // Lower starting budget - must earn through activities
+      medium: 10, // Very challenging start
+      hard: 5,    // Minimal starting money
+      expert: 0   // Expert mode - start with nothing, pure skill
     }
+
+    const startingBudget = budgetMap[difficulty]
+
+    // ✅ FIX: Sync family_budget with Zustand store
+    useGameStore.getState().updateFamilyBudget(startingBudget)
 
     updateGameSession({
       difficulty,
-      family_budget: budgetMap[difficulty],
+      family_budget: startingBudget, // Set initial budget based on difficulty
       family_members: players.map((player, index) => ({
         ...player,
         position: 0,

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Mic, Video, ShoppingCart, Dices, Info, Flame, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { navigateToGame } from '../utils/navigationHelper';
 
 // --- Mock Data & Types (replace with your actual game state management) ---
 
@@ -216,7 +217,7 @@ export const GameHub: React.FC = () => {
         
         {/* Back Button */}
         <motion.button
-          onClick={() => navigate('/game')}
+          onClick={() => navigateToGame(navigate)}
           className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
           whileHover={{ scale: 1.05, x: -5 }}
           whileTap={{ scale: 0.95 }}

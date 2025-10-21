@@ -158,22 +158,36 @@ export const generateConversationTopics = async (context: {
       .map(m => `${m.name} (${m.role}${m.age ? `, age ${m.age}` : ''})`)
       .join(', ')
 
-    const prompt = `Generate 3-5 engaging conversation topics for a Singapore intergenerational family game session.
+    const prompt = `Generate 4-6 SHORT, engaging conversation topics for a Singapore intergenerational family game.
 
-Family Members: ${familyContext}
-Current Challenge: ${context.currentChallenge || 'Cooking a traditional dish together'}
-Bonding Level: ${context.bondingLevel || 'medium'}
+Family: ${familyContext}
+Challenge: ${context.currentChallenge || 'Cooking traditional dish'}
+Bonding: ${context.bondingLevel || 'medium'}
 
-Requirements:
-1. Topics should encourage intergenerational dialogue (elderly + teenagers + youngsters)
-2. Focus on Singapore culture, cooking, food traditions, wet markets, or family heritage
-3. Create common ground between generations (e.g., traditional vs modern cooking methods)
-4. Each topic should be a conversation starter (question or prompt)
-5. Keep topics friendly, respectful, and age-appropriate
-6. Topics should relate to the cooking challenge if possible
+✅ CRITICAL REQUIREMENTS:
+1. Each topic MUST be 2-5 words maximum (e.g., "Talk about History", "Old vs New", "Cooking Memories")
+2. Topics MUST relate to BOTH elderly and teenagers (find common ground)
+3. Focus on: Food, traditions, family stories, skills, Singapore culture
+4. Make elderly feel valued (their wisdom/experience)
+5. Make teenagers feel heard (their modern perspectives)
+6. Create natural conversation bridges between generations
 
-Return ONLY a JSON array of 3-5 topic strings, nothing else. Example format:
-["Topic 1 here", "Topic 2 here", "Topic 3 here"]`
+❌ AVOID:
+- Long sentences or questions
+- Topics only one generation understands
+- Complex or abstract concepts
+- Technology-heavy topics (unless comparing old vs new)
+
+✅ GOOD EXAMPLES:
+- "Grandma's Secret Recipe"
+- "Market Then vs Now"
+- "First Time Cooking"
+- "Family Food Traditions"
+- "Old vs New Tools"
+- "Favorite Childhood Dish"
+
+Return ONLY a JSON array of 4-6 SHORT topic strings (2-5 words each):
+["Topic 1", "Topic 2", "Topic 3", "Topic 4"]`
 
     const response = await ai.models.generateContent({
       model: MODEL,

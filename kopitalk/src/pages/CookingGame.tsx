@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { ArrowLeft, ChefHat, Clock, Users, Star, CheckCircle, Play, Pause, Gamepad2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { navigateToGame } from '../utils/navigationHelper'
 
 interface Recipe {
   id: string
@@ -185,7 +186,7 @@ const CookingGame: React.FC = () => {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <motion.button
-            onClick={() => navigate('/game')}
+            onClick={() => navigateToGame(navigate)}
             className="p-2 hover:bg-white rounded-lg transition-colors"
             whileHover={{ scale: 1.1, x: -3 }}
             whileTap={{ scale: 0.9 }}

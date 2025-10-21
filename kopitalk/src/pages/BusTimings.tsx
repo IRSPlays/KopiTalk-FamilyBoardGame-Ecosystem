@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
+import { navigateToGame } from '../utils/navigationHelper'
 
 interface BusService {
   service_no: string
@@ -484,7 +485,7 @@ const BusTimings: React.FC = () => {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <motion.button
-            onClick={() => navigate('/game')}
+            onClick={() => navigateToGame(navigate)}
             className="flex items-center gap-2 px-4 py-3 bg-white/80 hover:bg-white rounded-xl transition-colors text-lg min-h-[44px]"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1073,7 +1074,7 @@ const BusTimings: React.FC = () => {
                   </ul>
                 </div>
                 <motion.button
-                  onClick={() => navigate('/game')}
+                  onClick={() => navigateToGame(navigate)}
                   className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 min-h-[44px]"
                   whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(59, 130, 246, 0.4)" }}
                   whileTap={{ scale: 0.98 }}

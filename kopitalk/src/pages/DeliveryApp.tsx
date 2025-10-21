@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
 import Breadcrumb from '../components/Breadcrumb'
+import { navigateToGame } from '../utils/navigationHelper'
 
 interface DeliveryItem {
   id: string
@@ -47,6 +48,29 @@ const DeliveryApp: React.FC = () => {
   const [cart, setCart] = useState<{ item: DeliveryItem; quantity: number }[]>([])
   const [showCheckout, setShowCheckout] = useState(false)
   const [deliveryComplete, setDeliveryComplete] = useState(false)
+
+  // ✅ Show loading state if dishChallenge hasn't loaded yet
+  if (!dishChallenge) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <motion.div
+            className="inline-block mb-4"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <Package className="w-16 h-16 text-blue-600" />
+          </motion.div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Delivery App...</h2>
+          <p className="text-gray-600">Preparing your shopping experience</p>
+        </motion.div>
+      </div>
+    )
+  }
   const [showStoreSelectionModal, setShowStoreSelectionModal] = useState(true) // Show modal on entry
 
   const isIngredientCollected = (itemName: string): boolean => {
@@ -244,7 +268,7 @@ const DeliveryApp: React.FC = () => {
           { label: 'Game', path: '/game' },
           { label: 'Delivery App', path: undefined, isActive: true }
         ]}
-        onBack={() => navigate('/game')}
+        onBack={() => navigateToGame(navigate)}
       />
 
       {/* Supermarket Selection Modal - Shows on entry */}
@@ -360,7 +384,7 @@ const DeliveryApp: React.FC = () => {
           transition={{ delay: 0.1 }}
         >
           <motion.button
-            onClick={() => navigate('/game')}
+            onClick={() => navigateToGame(navigate)}
             className="p-3 hover:bg-white rounded-lg transition-colors min-h-[44px] min-w-[44px]"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -743,7 +767,7 @@ const DeliveryApp: React.FC = () => {
                 <motion.button
                   onClick={() => {
                     setDeliveryComplete(false)
-                    navigate('/game')
+                    navigateToGame(navigate)
                   }}
                   className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 min-h-[44px]"
                   whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(168, 85, 247, 0.4)" }}

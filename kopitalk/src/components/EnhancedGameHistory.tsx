@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { gameStorage } from '../utils/gameStorage'
 import { GameSession } from '../types'
+import { navigateToGame } from '../utils/navigationHelper'
 
 interface DashboardStats {
   totalGames: number

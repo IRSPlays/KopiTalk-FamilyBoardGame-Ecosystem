@@ -125,15 +125,18 @@ const MRTStation: React.FC<MRTStationProps> = ({
           className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+          <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-6 text-white">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <Train className="w-6 h-6" />
+                  <div className="flex items-center gap-1">
+                    <CreditCard className="w-5 h-5" />
+                    <Train className="w-5 h-5" />
+                  </div>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">MRT Station</h2>
-                  <p className="text-blue-100 text-sm">Singapore Mass Rapid Transit</p>
+                  <h2 className="text-2xl font-bold">EZ-Link Card</h2>
+                  <p className="text-cyan-100 text-sm">MRT Travel & Card Management</p>
                 </div>
               </div>
               <button
