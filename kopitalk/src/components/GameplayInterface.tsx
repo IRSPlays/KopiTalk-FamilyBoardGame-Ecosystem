@@ -16,6 +16,8 @@ import EnhancedGameStatistics from './EnhancedGameStatistics'
 import AdvancedAIIntegration from './AdvancedAIIntegration'
 import ESP32BoardIntegration from './ESP32BoardIntegration'
 import GameSettingsPanel from './GameSettingsPanel'
+import ChallengeBanner from './ChallengeBanner'
+import Breadcrumb from './Breadcrumb'
 import { ConversationAnalysis, VideoAnalysis, RandomEvent, getRandomEvent } from '../utils/geminiApi'
 
 interface Props {
@@ -373,13 +375,14 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
     const cost = Math.floor(Math.random() * 30) + 20
     const earnings = Math.floor(cost * 0.1) + 5
     
-    if (player.cash >= cost) {
-      updatePlayer(playerId, {
-        cash: player.cash - cost + earnings
+    // FIXED: Use family_budget for family game (shared money pool)
+    if (gameSession.family_budget >= cost) {
+      onUpdateGame({
+        family_budget: gameSession.family_budget - cost + earnings
       })
-      showNotification(`🛒 ${player.name} shopped at ${market.name}! Spent $${cost}, earned $${earnings}`, 'success')
+      showNotification(`🛒 ${player.name} shopped at ${market.name}! Spent $${cost}, earned $${earnings} for the family`, 'success')
     } else {
-      showNotification(`❌ ${player.name} needs $${cost} but only has $${player.cash}`, 'error')
+      showNotification(`❌ ${player.name} needs $${cost} but family only has $${gameSession.family_budget}`, 'error')
     }
   }
 
@@ -426,6 +429,17 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-kopi-50 via-white to-talk-50">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: 'Home', path: '/' },
+          { label: 'Family Setup', path: undefined },
+          { label: 'Board Setup', path: undefined },
+          { label: 'Game', path: undefined, isActive: true }
+        ]}
+        onBack={() => navigate('/')}
+      />
+
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         
         {/* Header */}
@@ -449,6 +463,9 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
             </div>
           </div>
         </motion.div>
+
+        {/* AI-Generated Dish Challenge Banner */}
+        <ChallengeBanner />
 
         {/* Tab Navigation */}
         <TabNavigation />
@@ -563,89 +580,148 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
               >
                 <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2">
                   <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Game Actions
+                  All Game Actions
                 </h2>
                 
-                <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                {/* UNIFIED GAME ACTIONS GRID - ALL FEATURES IN ONE PLACE */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   
-                  {/* Audio Recording */}
+                  {/* CONVERSATION & BONDING */}
                   <motion.button
                     variants={cardHoverVariants}
                     whileHover="hover"
                     whileTap="tap"
                     onClick={() => setShowAudioModal(true)}
-                    className="p-4 sm:p-6 bg-gradient-to-br from-talk-500 to-talk-600 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow touch-manipulation"
+                    className="p-4 sm:p-5 bg-gradient-to-br from-talk-500 to-talk-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
                   >
-                    <Mic className="w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-3" />
-                    <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">Record Conversation</h3>
-                    <p className="text-xs sm:text-sm opacity-90">Have a family discussion and move 1-5 spaces</p>
+                    <Mic className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">Audio Conversation</h3>
+                    <p className="text-xs opacity-90">Record family chat • Move 1-5 tiles</p>
                   </motion.button>
 
-                  {/* TikTok Recording */}
+                  {/* TIKTOK CONTENT */}
                   <motion.button
                     variants={cardHoverVariants}
                     whileHover="hover"
                     whileTap="tap"
                     onClick={() => setShowTikTokModal(true)}
-                    className="p-4 sm:p-6 bg-gradient-to-br from-kopi-500 to-kopi-600 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow touch-manipulation"
+                    className="p-4 sm:p-5 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
                   >
-                    <Camera className="w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-3" />
-                    <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">TikTok Challenge</h3>
-                    <p className="text-xs sm:text-sm opacity-90">Create Singapore content and earn $5-25</p>
+                    <Camera className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">TikTok Challenge</h3>
+                    <p className="text-xs opacity-90">Create content • Earn $5-25</p>
                   </motion.button>
 
-                  {/* REMOVED: Dice rolling - replaced with conversation-based movement */}
-                  {/* Movement now determined by AI analysis of conversations */}
-                  
-                  {pendingMovement > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-4 sm:p-6 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-md"
-                    >
-                      <MapPin className="w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-3" />
-                      <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">
-                        Ready to Move!
-                      </h3>
-                      <p className="text-xs sm:text-sm opacity-90">
-                        {movementReason || `Earned ${pendingMovement} tiles from conversation`}
-                      </p>
-                    </motion.div>
-                  )}
+                  {/* DELIVERY APP */}
+                  <motion.button
+                    variants={cardHoverVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    onClick={() => startModule(singaporeLifeModules.find(m => m.id === 'delivery')!)}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                  >
+                    <Package className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">Delivery App</h3>
+                    <p className="text-xs opacity-90">Order groceries online</p>
+                  </motion.button>
+
+                  {/* SUPERMARKET SHOPPING */}
+                  <motion.button
+                    variants={cardHoverVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    onClick={() => handleMarketShopping('supermarket', 0)}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                  >
+                    <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">Supermarket</h3>
+                    <p className="text-xs opacity-90">Self-checkout shopping</p>
+                  </motion.button>
+
+                  {/* WET MARKET */}
+                  <motion.button
+                    variants={cardHoverVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    onClick={() => handleMarketShopping('wet_market', 0)}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                  >
+                    <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">Wet Market</h3>
+                    <p className="text-xs opacity-90">Traditional market visit</p>
+                  </motion.button>
+
+                  {/* COOKING GAME */}
+                  <motion.button
+                    variants={cardHoverVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    onClick={() => alert('Cooking game starting soon!')}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-yellow-500 to-orange-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                  >
+                    <ChefHat className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">Cooking Game</h3>
+                    <p className="text-xs opacity-90">Cook the challenge dish</p>
+                  </motion.button>
+
+                  {/* MRT TRANSPORT */}
+                  <motion.button
+                    variants={cardHoverVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    onClick={() => startModule(singaporeLifeModules.find(m => m.id === 'transport')!)}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-red-500 to-red-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                  >
+                    <Bus className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">MRT Station</h3>
+                    <p className="text-xs opacity-90">Use transport system</p>
+                  </motion.button>
+
+                  {/* ACTIVITIES HUB */}
+                  <motion.button
+                    variants={cardHoverVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    onClick={() => startModule(singaporeLifeModules.find(m => m.id === 'activities')!)}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                  >
+                    <Activity className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">Activities Hub</h3>
+                    <p className="text-xs opacity-90">Bonding activities</p>
+                  </motion.button>
+
+                  {/* EZLINK TOP-UP */}
+                  <motion.button
+                    variants={cardHoverVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    onClick={() => alert('EZ-Link management coming soon!')}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                  >
+                    <CreditCard className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">EZ-Link Card</h3>
+                    <p className="text-xs opacity-90">Top-up & manage card</p>
+                  </motion.button>
                 </div>
 
-                {/* Markets Grid */}
-                <div className="mt-4 sm:mt-6">
-                  <h3 className="text-sm sm:text-md font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
-                    <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Singapore Markets
-                  </h3>
-                  <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-                    {markets.map((market, index) => (
-                      <motion.button
-                        key={market.id}
-                        variants={itemVariants}
-                        custom={index}
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleMarketShopping(market.id, 0)}
-                        className="p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 text-left transition-all hover:shadow-md touch-manipulation"
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${market.color} flex-shrink-0`} />
-                          <h4 className="font-semibold text-gray-800 text-xs sm:text-sm truncate flex-1">{market.name}</h4>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-1 truncate">{market.pricing}</p>
-                        <p className="text-xs text-gray-500 truncate">{market.queue}</p>
-                        <p className="text-xs text-green-600 font-medium mt-1 truncate">{market.special}</p>
-                        <div className="flex items-center gap-1 mt-2">
-                          <div className={`w-2 h-2 rounded-full ${market.availability > 80 ? 'bg-green-400' : 'bg-yellow-400'}`} />
-                          <span className="text-xs text-gray-500">{market.availability}% available</span>
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
+                {/* MOVEMENT STATUS */}
+                {pendingMovement > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 p-4 sm:p-5 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl shadow-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-7 h-7" />
+                      <div>
+                        <h3 className="font-semibold text-base sm:text-lg">Ready to Move!</h3>
+                        <p className="text-sm opacity-90">
+                          {movementReason || `You earned ${pendingMovement} tiles from your conversation`}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             )}
 

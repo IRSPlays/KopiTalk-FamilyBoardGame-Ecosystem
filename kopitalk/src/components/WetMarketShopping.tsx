@@ -48,7 +48,8 @@ const WetMarketShopping: React.FC<WetMarketShoppingProps> = ({
   const [cart, setCart] = useState<Array<{ product: MarketProduct; quantity: number; finalPrice: number }>>([])
   
   const player = useGameStore(state => state.players.find(p => p.id === currentPlayerId))
-  const spendMoney = useGameStore(state => state.spendMoney)
+  const family_budget = useGameStore(state => state.family_budget) // FIXED: Use family budget
+  const updateFamilyBudget = useGameStore(state => state.updateFamilyBudget) // FIXED: Use family budget
   const markIngredientCollected = useGameStore(state => state.markIngredientCollected)
   const requiredIngredients = useGameStore(state => state.collectedIngredients)
   const addCompletedActivity = useGameStore(state => state.addCompletedActivity)
@@ -232,9 +233,13 @@ const WetMarketShopping: React.FC<WetMarketShoppingProps> = ({
     const totalSpent = cart.reduce((sum, item) => sum + item.finalPrice, 0)
     const savings = calculateSavings()
     
-    if (spendMoney(currentPlayerId, totalSpent)) {
+    // FIXED: Use family_budget for family game
+    if (family_budget >= totalSpent) {
       // Calculate earnings based on bargaining success
       const earnings = Math.floor(savings * 0.5) + 8 // Base + bonus
+      
+      // Deduct cost and add earnings
+      updateFamilyBudget(-totalSpent + earnings)
 
       addCompletedActivity({
         id: `wet-market-${Date.now()}`,
@@ -250,10 +255,10 @@ const WetMarketShopping: React.FC<WetMarketShoppingProps> = ({
         }
       })
 
-      alert(`🎉 Shopping complete!\n💰 Spent: $${totalSpent.toFixed(2)}\n💚 Saved: $${savings.toFixed(2)}\n⭐ Earned: $${earnings}!`)
+      alert(`🎉 Shopping complete!\n💰 Spent: $${totalSpent.toFixed(2)}\n💚 Saved: $${savings.toFixed(2)}\n⭐ Earned: $${earnings} for family!`)
       onClose()
     } else {
-      alert(`❌ Insufficient cash! Need $${totalSpent.toFixed(2)}, have $${player?.cash.toFixed(2)}`)
+      alert(`❌ Insufficient funds! Need $${totalSpent.toFixed(2)}, family has $${family_budget.toFixed(2)}`)
     }
   }
 
@@ -299,8 +304,8 @@ const WetMarketShopping: React.FC<WetMarketShoppingProps> = ({
 
             <div className="flex items-center justify-between bg-white/10 rounded-xl p-3">
               <div>
-                <p className="text-xs text-orange-100">Your Cash</p>
-                <p className="text-xl font-bold">${player.cash.toFixed(2)}</p>
+                <p className="text-xs text-orange-100">Family Budget</p>
+                <p className="text-xl font-bold">${family_budget.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-xs text-orange-100">Cart ({cart.length})</p>

@@ -4,6 +4,17 @@
 
 **KopiTalk is a D.I.Y. (Do It Yourself) roleplay board game designed to create common ground between generations (elderly and youth) through cooking and authentic Singapore experiences.**
 
+### ⚠️ CRITICAL: PHYSICAL BOARD, NOT VIRTUAL
+
+**THE BOARD IS PHYSICALLY BUILT BY PLAYERS**
+
+- Players use provided physical tiles/parts to build their custom board
+- The board includes tangible components: market tiles, MRT stations, cooking areas, etc.
+- **ESP32-CAM captures photos** of the completed physical board layout
+- **The app is a LOGIC PROCESSOR**, not the game itself - it tracks positions, analyzes conversations, manages challenges
+- **BoardSetupModal** uploads physical board photos for AI analysis (Gemini Vision)
+- **BoardBuilderModal** is optional digital planning tool only (NOT the actual board)
+
 ### Core Objectives
 1. **Bridge Generational Gap**: Create meaningful interactions between elderly and youth
 2. **Common Ground Through Cooking**: Use food and traditional recipes as the primary bonding activity
@@ -16,14 +27,26 @@
 ## 🏗️ Complete Game Flow
 
 ### Phase 1: D.I.Y. Board Building
-**Players physically build their own custom game board**
+**Players physically build their own custom game board with real tiles**
 
-- Provide parts/tiles for markets, MRT stations, wet markets, supermarkets, cooking stations
-- Players arrange tiles in their preferred layout
-- ESP32-CAM captures the custom board configuration
-- App stores the custom board layout for position tracking
+**Physical Setup**:
+- Players receive physical board tiles/parts (included with game package)
+- Tile types: markets, MRT stations, wet markets, supermarkets, cooking stations, delivery zones, etc.
+- Players arrange physical tiles on table/floor in their preferred layout (like building with LEGO)
+- Each family creates a unique board configuration
 
-**Component**: `BoardBuilderModal.tsx` (To be created)
+**Digital Integration**:
+- ESP32-CAM takes photo of completed physical board
+- **BoardSetupModal** component uploads photo for AI analysis
+- Gemini Vision API recognizes tile positions and layout
+- App stores the board configuration for player position tracking
+
+**Optional Digital Tool**:
+- **BoardBuilderModal** component (474 lines, already implemented)
+- Digital preview/planning tool only (NOT the actual board)
+- Players can plan layout digitally before building physically
+- Helps visualize different configurations
+- NOT REQUIRED - actual board is always physical
 
 ---
 

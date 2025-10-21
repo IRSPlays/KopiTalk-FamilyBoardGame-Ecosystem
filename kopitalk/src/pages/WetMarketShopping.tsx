@@ -41,8 +41,8 @@ const WetMarketShopping: React.FC<WetMarketProps> = ({
 
   const player = useGameStore(state => state.players.find(p => p.id === currentPlayerId))
   const markIngredientCollected = useGameStore(state => state.markIngredientCollected)
-  const spendMoney = useGameStore(state => state.spendMoney)
-  const earnMoney = useGameStore(state => state.earnMoney)
+  const family_budget = useGameStore(state => state.family_budget) // FIXED: Use family budget
+  const updateFamilyBudget = useGameStore(state => state.updateFamilyBudget) // FIXED: Use family budget
   const addCompletedActivity = useGameStore(state => state.addCompletedActivity)
 
   if (!player) return null
@@ -154,16 +154,17 @@ const WetMarketShopping: React.FC<WetMarketProps> = ({
     // Calculate earnings based on negotiation success
     const earnings = Math.floor(potentialSavings * 2) + 5 // Base $5 + double the savings
 
-    if (spendMoney(currentPlayerId, totalCost)) {
+    // FIXED: Use family_budget for family game
+    if (family_budget >= totalCost) {
+      // Deduct cost and add earnings
+      updateFamilyBudget(-totalCost + earnings)
+      
       // Mark collected ingredients
       cart.forEach(item => {
         markIngredientCollected(item.product.name, 'wet_market')
       })
 
-      // Award earnings for good negotiation
-      earnMoney(currentPlayerId, earnings)
-
-      // Record activity
+      // Record activity (earnings added automatically by addCompletedActivity)
       addCompletedActivity({
         id: `market-${Date.now()}`,
         type: 'market_roleplay',
@@ -181,10 +182,10 @@ const WetMarketShopping: React.FC<WetMarketProps> = ({
         onPurchaseComplete(cart.map(c => c.product.name), totalCost, earnings)
       }
 
-      alert(`✅ Purchased ${cart.length} items for $${totalCost.toFixed(2)}!\n💰 Earned $${earnings} for good bargaining!\n💡 Saved $${potentialSavings.toFixed(2)} through negotiation!`)
+      alert(`✅ Purchased ${cart.length} items for $${totalCost.toFixed(2)}!\n💰 Earned $${earnings} for family!\n💡 Saved $${potentialSavings.toFixed(2)} through negotiation!`)
       onClose()
     } else {
-      alert(`❌ Insufficient funds! Need $${totalCost.toFixed(2)}, have $${player.cash.toFixed(2)}`)
+      alert(`❌ Insufficient funds! Need $${totalCost.toFixed(2)}, family has $${family_budget.toFixed(2)}`)
     }
   }
 
@@ -222,8 +223,8 @@ const WetMarketShopping: React.FC<WetMarketProps> = ({
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-orange-100">Your Cash</p>
-              <p className="text-2xl font-bold">${player.cash.toFixed(2)}</p>
+              <p className="text-sm text-orange-100">Family Budget</p>
+              <p className="text-2xl font-bold">${family_budget.toFixed(2)}</p>
             </div>
           </div>
         </div>

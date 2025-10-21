@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChefHat, Sparkles, Clock, TrendingUp, Award, RefreshCw, Check, Loader2 } from 'lucide-react'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 import type { DishChallenge } from '../stores/gameStore'
 
 interface GameStartChallengeProps {
@@ -38,8 +38,8 @@ const GameStartChallenge: React.FC<GameStartChallengeProps> = ({
         throw new Error('Gemini API key not configured')
       }
 
-      const genAI = new GoogleGenerativeAI(apiKey)
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+      // FIXED: Use correct @google/genai SDK pattern (Context7 research)
+      const ai = new GoogleGenAI({ apiKey })
 
       const randomDish = singaporeDishes[Math.floor(Math.random() * singaporeDishes.length)]
       const randomMethod = cookingMethods[Math.floor(Math.random() * cookingMethods.length)]
@@ -49,13 +49,12 @@ const GameStartChallenge: React.FC<GameStartChallengeProps> = ({
 Dish: ${randomDish}
 Cooking Method: ${randomMethod}
 
-Provide a JSON response with this EXACT structure (no markdown, just raw JSON):
+Provide a JSON response with this EXACT structure:
 {
   "dish_name": "name of dish",
   "description": "2-3 sentences about the dish's cultural significance",
   "ingredients": [
     {"name": "ingredient name", "quantity": number, "unit": "unit like grams, ml, pieces"},
-    // 8-12 ingredients total
   ],
   "cooking_method": "${randomMethod}",
   "difficulty_level": "easy" or "medium" or "hard",
@@ -63,13 +62,22 @@ Provide a JSON response with this EXACT structure (no markdown, just raw JSON):
   "cultural_context": "3-4 sentences about history, traditions, family memories associated with this dish"
 }
 
-Make ingredients realistic and available in Singapore supermarkets/wet markets. Include specific quantities.`
+Make ingredients realistic and available in Singapore supermarkets/wet markets. Include 8-12 specific ingredients with quantities.`
 
-      const result = await model.generateContent(prompt)
-      const response = result.response.text()
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash-exp',
+        contents: prompt,
+        config: {
+          temperature: 0.8,
+          maxOutputTokens: 2048,
+          responseMimeType: 'application/json'
+        }
+      })
+
+      const responseText = response.text || ''
       
       // Clean response - remove markdown code blocks if present
-      let cleanedResponse = response.trim()
+      let cleanedResponse = responseText.trim()
       if (cleanedResponse.startsWith('```json')) {
         cleanedResponse = cleanedResponse.slice(7)
       }

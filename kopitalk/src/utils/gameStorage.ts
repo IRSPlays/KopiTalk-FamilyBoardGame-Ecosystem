@@ -77,7 +77,7 @@ export const gameStorage = {
         cultural_knowledge_score: 0,
         index
       })),
-      game_phase: 'board_building', // First phase: build D.I.Y. board
+      game_phase: 'family_setup', // First phase: family setup
       // REMOVED: current_player_index - no turn-based system, continuous roleplay
       game_scenario: null,
       challenges_completed: [],

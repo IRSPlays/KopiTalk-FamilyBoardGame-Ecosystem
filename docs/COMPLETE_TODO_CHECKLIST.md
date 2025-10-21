@@ -1,9 +1,20 @@
-# 📋 Complete Implementation TODO Checklist
+# ⚠️ ARCHIVED DOCUMENT
+
+**This document has been archived and is no longer maintained.**
+
+**Please refer to**: `/docs/IMPLEMENTATION_ROADMAP.md` for the current implementation plan.
+
+**Archived Date**: October 21, 2025  
+**Reason**: Consolidated into single master roadmap
+
+---
+
+# 📋 Complete Implementation TODO Checklist (ARCHIVED)
 
 ## 🎯 Purpose Alignment: D.I.Y. Roleplay Board Game
 
 **Last Updated**: October 13, 2025
-**Status**: Phase 1 - Foundation Updates Complete
+**Status**: ARCHIVED - See IMPLEMENTATION_ROADMAP.md
 
 ---
 

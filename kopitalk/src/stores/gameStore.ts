@@ -70,7 +70,7 @@ interface GameState {
   
   // Economy
   family_budget: number
-  ezlink_balance: number // Global family EZ-Link balance
+  ezlink_balance: number // Global family EZ-Link balance (for family-wide top-ups)
   
   // Progression
   collectedIngredients: Ingredient[]
@@ -83,6 +83,13 @@ interface GameState {
   gameStarted: boolean
   gameCompleted: boolean
   cookingScore: number | null
+  
+  // Bonding & Conversation Tracking (Added for Phase 2)
+  bonding_level: number // 0-100 score representing intergenerational connection quality
+  last_conversation_time: string | null // ISO timestamp of last conversation
+  conversation_quality: 'excellent' | 'good' | 'fair' | 'needs_improvement'
+  total_conversations: number
+  conversation_topics_discussed: string[]
   
   // Timestamp
   sessionStartTime: string | null
@@ -125,6 +132,18 @@ interface GameActions {
   completeGame: (score: number) => void
   resetGame: () => void
   
+  // Bonding & Conversation Management (Added for Phase 2)
+  updateBondingLevel: (newLevel: number) => void
+  increaseBondingLevel: (amount: number) => void
+  decreaseBondingLevel: (amount: number) => void
+  recordConversation: (quality: 'excellent' | 'good' | 'fair' | 'needs_improvement', topic?: string) => void
+  getBondingStatus: () => {
+    level: number
+    quality: string
+    lastInteraction: string | null
+    totalConversations: number
+  }
+  
   // Utilities
   canAfford: (playerId: number, amount: number) => boolean
   spendMoney: (playerId: number, amount: number) => boolean
@@ -140,12 +159,18 @@ const initialState: GameState = {
   dishChallenge: null,
   players: [],
   family_budget: 0, // Start with zero money - must earn through activities!
+  ezlink_balance: 0, // Global family EZ-Link balance
   collectedIngredients: [],
   completedActivities: [],
   activeWeatherChallenge: null,
   gameStarted: false,
   gameCompleted: false,
   cookingScore: null,
+  bonding_level: 0, // Start at 0 - build through conversations
+  last_conversation_time: null,
+  conversation_quality: 'fair',
+  total_conversations: 0,
+  conversation_topics_discussed: [],
   sessionStartTime: null,
 }
 
@@ -199,6 +224,10 @@ export const useGameStore = create<GameStore>()(
         }
         return false
       },
+      
+      updateEzlinkBalance: (amount) => set(state => ({
+        ezlink_balance: Math.max(0, state.ezlink_balance + amount)
+      })),
       
       topUpEzLink: (playerId, amount) => {
         const state = get()
@@ -291,6 +320,48 @@ export const useGameStore = create<GameStore>()(
         customBoard: get().customBoard, // Keep the board they built
       }),
       
+      // Bonding & Conversation Management (Phase 2 Implementation)
+      updateBondingLevel: (newLevel) => set({ 
+        bonding_level: Math.max(0, Math.min(100, newLevel)) // Clamp between 0-100
+      }),
+      
+      increaseBondingLevel: (amount) => set(state => ({
+        bonding_level: Math.min(100, state.bonding_level + amount)
+      })),
+      
+      decreaseBondingLevel: (amount) => set(state => ({
+        bonding_level: Math.max(0, state.bonding_level - amount)
+      })),
+      
+      recordConversation: (quality, topic) => {
+        const qualityScores = {
+          excellent: 10,
+          good: 5,
+          fair: 2,
+          needs_improvement: 0
+        }
+        
+        set(state => ({
+          bonding_level: Math.min(100, state.bonding_level + qualityScores[quality]),
+          last_conversation_time: new Date().toISOString(),
+          conversation_quality: quality,
+          total_conversations: state.total_conversations + 1,
+          conversation_topics_discussed: topic 
+            ? [...state.conversation_topics_discussed, topic]
+            : state.conversation_topics_discussed
+        }))
+      },
+      
+      getBondingStatus: () => {
+        const state = get()
+        return {
+          level: state.bonding_level,
+          quality: state.conversation_quality,
+          lastInteraction: state.last_conversation_time,
+          totalConversations: state.total_conversations
+        }
+      },
+      
       // Utilities
       canAfford: (playerId, amount) => {
         const player = get().players.find(p => p.id === playerId)
@@ -330,8 +401,15 @@ export const useGameStore = create<GameStore>()(
         dishChallenge: state.dishChallenge,
         players: state.players,
         family_budget: state.family_budget,
+        ezlink_balance: state.ezlink_balance, // FIX: Now persisting global EZ-Link balance
         collectedIngredients: state.collectedIngredients,
         completedActivities: state.completedActivities,
+        activeWeatherChallenge: state.activeWeatherChallenge, // FIX: Now persisting weather challenges
+        bonding_level: state.bonding_level, // Phase 2: Persist bonding meter
+        last_conversation_time: state.last_conversation_time,
+        conversation_quality: state.conversation_quality,
+        total_conversations: state.total_conversations,
+        conversation_topics_discussed: state.conversation_topics_discussed,
         gameStarted: state.gameStarted,
         gameCompleted: state.gameCompleted,
         cookingScore: state.cookingScore,

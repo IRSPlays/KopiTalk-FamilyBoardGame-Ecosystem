@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
+import Breadcrumb from '../components/Breadcrumb'
 
 interface DeliveryItem {
   id: string
@@ -46,6 +47,7 @@ const DeliveryApp: React.FC = () => {
   const [cart, setCart] = useState<{ item: DeliveryItem; quantity: number }[]>([])
   const [showCheckout, setShowCheckout] = useState(false)
   const [deliveryComplete, setDeliveryComplete] = useState(false)
+  const [showStoreSelectionModal, setShowStoreSelectionModal] = useState(true) // Show modal on entry
 
   const isIngredientCollected = (itemName: string): boolean => {
     return collectedIngredients.some(
@@ -235,6 +237,121 @@ const DeliveryApp: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: 'Home', path: '/' },
+          { label: 'Game', path: '/game' },
+          { label: 'Delivery App', path: undefined, isActive: true }
+        ]}
+        onBack={() => navigate('/game')}
+      />
+
+      {/* Supermarket Selection Modal - Shows on entry */}
+      <AnimatePresence>
+        {showStoreSelectionModal && !selectedStore && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowStoreSelectionModal(false)}
+          >
+            <motion.div
+              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <ShoppingBag className="w-8 h-8 text-blue-600" />
+                  <h2 className="text-2xl font-bold text-gray-900">Choose Your Supermarket</h2>
+                </div>
+                <p className="text-gray-600">Select where you want to order your ingredients from</p>
+                {dishChallenge && (
+                  <div className="mt-3 bg-purple-50 rounded-lg p-3">
+                    <p className="text-sm text-purple-900">
+                      <strong>Challenge:</strong> {dishChallenge.dish_name}
+                    </p>
+                    <p className="text-xs text-purple-700 mt-1">
+                      {dishChallenge.ingredients.length} ingredients needed
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 space-y-4">
+                {stores.map((store, index) => (
+                  <motion.button
+                    key={store.id}
+                    onClick={() => {
+                      setSelectedStore(store)
+                      setShowStoreSelectionModal(false)
+                    }}
+                    className="w-full bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-xl p-5 hover:border-blue-400 hover:shadow-lg transition-all text-left"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02, x: 5 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-5xl">{store.icon}</span>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-xl text-gray-900 mb-1">{store.name}</h3>
+                        <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
+                          <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                            <span>{store.rating}</span>
+                          </div>
+                          <span>•</span>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            <span>{store.estimatedTime}</span>
+                          </div>
+                          <span>•</span>
+                          <div className="flex items-center gap-1">
+                            <Bike className="w-4 h-4" />
+                            <span className="font-semibold text-blue-600">
+                              ${store.deliveryFee.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        {store.specialOffer && (
+                          <div className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                            <Sparkles className="w-3 h-3" />
+                            {store.specialOffer}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-blue-600">
+                        <motion.div
+                          whileHover={{ x: 5 }}
+                          transition={{ type: "spring", stiffness: 400 }}
+                        >
+                          →
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+
+              <div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl">
+                <button
+                  onClick={() => setShowStoreSelectionModal(false)}
+                  className="w-full text-gray-600 hover:text-gray-800 text-sm font-medium py-2"
+                >
+                  I'll choose later
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <motion.div 
           className="flex items-center gap-4 mb-6"

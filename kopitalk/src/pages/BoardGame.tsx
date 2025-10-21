@@ -4,14 +4,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { gameStorage } from '../utils/gameStorage'
 import { GameSession } from '../types'
 import FamilySetup from '../components/FamilySetup'
+// import BoardBuilderModal from '../components/BoardBuilderModal' // TEMPORARILY DISABLED - drag-and-drop phase removed
 import BoardSetupModal from '../components/BoardSetupModal'
 import GameplayInterface from '../components/GameplayInterface'
+import GameStartChallenge from '../components/GameStartChallenge'
+import { useGameStore } from '../stores/gameStore'
 
 const BoardGame: React.FC = () => {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const [gameSession, setGameSession] = useState<GameSession | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showChallengeModal, setShowChallengeModal] = useState(false)
+  const { setDishChallenge } = useGameStore()
 
   useEffect(() => {
     if (sessionId) {
@@ -78,11 +83,25 @@ const BoardGame: React.FC = () => {
         conversation_contributions: 0,
         cultural_knowledge_score: 0
       })),
-      game_phase: 'board_building' // D.I.Y. board building first
+      game_phase: 'board_setup' // SKIP board_building, go directly to photo upload
     })
   }
 
+  // REMOVED: handleBoardBuildingComplete - drag-and-drop building removed as per user request
+  // User: "Remove board game setup which is the one i drag and drop temporarily"
+  // New flow: family_setup → board_setup (photo only) → challenge → gameplay
+
   const handleBoardSetupComplete = () => {
+    // FIXED: Show challenge generation modal after board setup, before gameplay
+    setShowChallengeModal(true)
+  }
+
+  const handleChallengeGenerated = (challenge: any) => {
+    // Save challenge to game store for use across pages
+    setDishChallenge(challenge)
+    
+    // Close modal and proceed to gameplay
+    setShowChallengeModal(false)
     updateGameSession({
       game_phase: 'gameplay'
     })
@@ -164,6 +183,10 @@ const BoardGame: React.FC = () => {
           <FamilySetup onSetupComplete={handleFamilySetupComplete} />
         </motion.div>
       )}
+
+      {/* REMOVED: board_building phase - drag-and-drop UI temporarily disabled */}
+      {/* User request: "Remove board game setup which is the one i drag and drop temporarily" */}
+      {/* New simplified flow: family_setup → board_setup (photo upload) → gameplay */}
       
       {gameSession.game_phase === 'board_setup' && (
         <motion.div
@@ -176,6 +199,26 @@ const BoardGame: React.FC = () => {
           <BoardSetupModal
             difficulty={gameSession.difficulty}
             onSetupComplete={handleBoardSetupComplete}
+          />
+        </motion.div>
+      )}
+      
+      {/* FIXED: Challenge generation modal after board setup, before gameplay */}
+      {showChallengeModal && (
+        <motion.div
+          key="challenge_generation"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.3 }}
+        >
+          <GameStartChallenge
+            onClose={() => {
+              // Skip challenge generation - go straight to gameplay
+              setShowChallengeModal(false)
+              updateGameSession({ game_phase: 'gameplay' })
+            }}
+            onChallengeGenerated={handleChallengeGenerated}
           />
         </motion.div>
       )}

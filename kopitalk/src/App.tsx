@@ -5,7 +5,7 @@ import BoardGame from './pages/BoardGame'
 import DeliveryApp from './pages/DeliveryApp'
 import CookingGame from './pages/CookingGame'
 import BusTimings from './pages/BusTimings'
-import EZLinkTopUp from './pages/EZLinkTopUp'
+import MRTStation from './pages/MRTStation'
 import SupermarketSelfOrder from './pages/SupermarketSelfOrder'
 import CookingGameMode from './pages/CookingGameMode'
 
@@ -18,7 +18,8 @@ function App() {
         <Route path="/delivery" element={<DeliveryApp />} />
         <Route path="/cooking" element={<CookingGame />} />
         <Route path="/bus" element={<BusTimings />} />
-        <Route path="/ezlink" element={<EZLinkTopUp />} />
+        <Route path="/ezlink" element={<MRTStation currentPlayerId={1} onClose={() => window.history.back()} />} />
+        <Route path="/mrt" element={<MRTStation currentPlayerId={1} onClose={() => window.history.back()} />} />
         <Route path="/supermarket-self-order" element={<SupermarketSelfOrder />} />
         <Route path="/cooking-game" element={<CookingGameMode dish={{ 
           id: 'test',

@@ -385,7 +385,7 @@ const EnhancedGameStatistics: React.FC<Props> = ({ gameSession, onViewDetail }) 
                   <Trophy className="w-4 h-4 text-green-500" />
                   <AnimatedCounter value={week.pointsEarned} suffix=" pts" />
                 </div>
-                <div className="flex items-center gap-2 hidden sm:flex">
+                <div className="hidden sm:flex items-center gap-2">
                   <Target className="w-4 h-4 text-purple-500" />
                   <AnimatedCounter value={week.challengesCompleted} suffix=" done" />
                 </div>

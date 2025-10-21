@@ -156,9 +156,9 @@ const MRTStation: React.FC<MRTStationProps> = ({
               <div className="bg-white/10 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <DollarSign className="w-4 h-4" />
-                  <p className="text-xs text-blue-100">Cash Available</p>
+                  <p className="text-xs text-blue-100">Family Budget</p>
                 </div>
-                <p className="text-2xl font-bold">${player.cash.toFixed(2)}</p>
+                <p className="text-2xl font-bold">${useGameStore.getState().family_budget.toFixed(2)}</p>
               </div>
             </div>
           </div>

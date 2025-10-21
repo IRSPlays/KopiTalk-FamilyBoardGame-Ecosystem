@@ -79,7 +79,7 @@ const AdvancedAIIntegration: React.FC<Props> = ({
   const [aiInsights, setAIInsights] = useState<AIInsight[]>([])
   const [smartRecommendations, setSmartRecommendations] = useState<SmartRecommendation[]>([])
   const [audioRecording, setAudioRecording] = useState(false)
-  const [selectedInsightType, setSelectedInsightType] = useState<'all' | 'recommendations' | 'observations' | 'challenges'>('all')
+  const [selectedInsightType, setSelectedInsightType] = useState<'all' | 'recommendation' | 'observation' | 'challenge'>('all')
 
   // Initialize AI insights and recommendations
   useEffect(() => {
@@ -196,7 +196,9 @@ const AdvancedAIIntegration: React.FC<Props> = ({
           'Learn authentic cooking techniques'
         ],
         timeEstimate: 90,
-        familyMembers: gameSession.family_members.filter(m => m.role === 'grandparent' || m.role === 'parent').map(m => m.name),
+        familyMembers: gameSession.family_members.filter(m => 
+          m.role === 'grandmother' || m.role === 'grandfather' || m.role === 'grandparent' || m.role === 'parent' || m.role === 'elderly'
+        ).map(m => m.name),
         culturalFocus: 'Family Heritage'
       },
       {
@@ -226,7 +228,7 @@ const AdvancedAIIntegration: React.FC<Props> = ({
           'Develop time management skills'
         ],
         timeEstimate: 30,
-        familyMembers: gameSession.family_members.filter(m => m.age >= 12).map(m => m.name),
+        familyMembers: gameSession.family_members.filter(m => !m.age || m.age >= 12).map(m => m.name),
         culturalFocus: 'Urban Living'
       }
     ]
@@ -239,13 +241,16 @@ const AdvancedAIIntegration: React.FC<Props> = ({
     
     try {
       // Simulate conversation analysis (in real app, this would use actual audio/text)
-      const mockConversation = `
+      // Create a mock audio blob for demonstration
+      const mockAudioText = `
         Family discussing their day in Singapore, sharing experiences about trying local food,
         using public transport, and learning about different cultures. High engagement and
         positive sentiment throughout the conversation.
       `
+      const mockAudioBlob = new Blob([mockAudioText], { type: 'audio/wav' })
+      const mockDuration = 120 // 2 minutes
 
-      const analysis = await analyzeConversation(mockConversation)
+      const analysis = await analyzeConversation(mockAudioBlob, mockDuration)
       
       // Mock analysis result
       const mockAnalysis: ConversationAnalysis = {
@@ -587,9 +592,9 @@ const AdvancedAIIntegration: React.FC<Props> = ({
       >
         {[
           { key: 'all', label: 'All Insights', count: aiInsights.length },
-          { key: 'recommendations', label: 'Recommendations', count: aiInsights.filter(i => i.type === 'recommendations').length },
-          { key: 'observations', label: 'Observations', count: aiInsights.filter(i => i.type === 'observations').length },
-          { key: 'challenges', label: 'Challenges', count: aiInsights.filter(i => i.type === 'challenges').length }
+          { key: 'recommendation', label: 'Recommendations', count: aiInsights.filter(i => i.type === 'recommendation').length },
+          { key: 'observation', label: 'Observations', count: aiInsights.filter(i => i.type === 'observation').length },
+          { key: 'challenge', label: 'Challenges', count: aiInsights.filter(i => i.type === 'challenge').length }
         ].map((filter, index) => (
           <motion.button
             key={filter.key}

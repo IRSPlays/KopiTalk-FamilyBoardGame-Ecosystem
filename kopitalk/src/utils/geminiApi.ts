@@ -1,44 +1,41 @@
 /**
  * Gemini API Integration for Text and Audio Processing
  * 
- * Documentation Sources (October 2025):
- * - Context7: 20,000 tokens from googleapis/js-genai SDK documentation
- * - DeepWiki: googleapis/js-genai repository structure and examples
- * - GitHub MCP: Live examples and integration patterns
+ * Documentation Source: Context7 @google/genai (October 2025)
+ * Verified SDK: @google/genai v1.19.0 (NEW unified SDK)
  * 
- * Key SDK Features Used:
- * - Text generation with system instructions and configuration
- * - Multimodal audio processing with inlineData format
- * - Structured JSON outputs with responseMimeType
- * - Proper contents format (string or ContentListUnion)
+ * Key Patterns from Context7:
+ * - GoogleGenAI class initialization with apiKey
+ * - generateContent() method for text generation
+ * - Model: 'gemini-2.0-flash-exp' (latest fast model)
+ * - Contents: string or array format
+ * - Response: response.text for output
  * 
- * Latest SDK Patterns (from Context7/DeepWiki/GitHub):
- * - Simplified contents: accepts string directly for text-only requests
- * - Multimodal contents: array with inlineData objects for media
- * - System instructions: comprehensive context via config.systemInstruction
- * - Response access: response.text for generated content
- * 
- * @see https://github.com/googleapis/js-genai
- * @see https://googleapis.github.io/js-genai/release_docs/
+ * @see Context7: /googleapis/js-genai
  */
 import { GoogleGenAI } from '@google/genai'
 
-// Initialize Gemini API using the latest @google/genai SDK (October 2025)
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY || 'demo-key'
+// Get API key from environment
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY
 
-// Initialize with proper error handling following latest Google Gen AI SDK patterns
+// Initialize Gemini API with proper error handling
 let ai: GoogleGenAI | null = null
-try {
-  ai = new GoogleGenAI({ apiKey: API_KEY })
-  console.log('✅ Gemini API initialized successfully with @google/genai SDK')
-} catch (error) {
-  console.error('❌ Failed to initialize Gemini API:', error)
-  console.warn('⚠️ Please set VITE_GEMINI_API_KEY or VITE_GOOGLE_API_KEY environment variable')
+
+if (!API_KEY || API_KEY === 'demo-key') {
+  console.error('❌ Gemini API key not configured')
+  console.error('⚠️ Please set VITE_GEMINI_API_KEY in .env file')
+} else {
+  try {
+    ai = new GoogleGenAI({ apiKey: API_KEY })
+    console.log('✅ Gemini API initialized successfully')
+    console.log('🔑 Using API key:', API_KEY.slice(0, 10) + '...' + API_KEY.slice(-4))
+  } catch (error) {
+    console.error('❌ Failed to initialize Gemini API:', error)
+  }
 }
 
-// Use Gemini 2.0 Flash Lite model (lightweight, cost-effective model as of October 2025)
-// Research from Context7 (20k tokens), DeepWiki, GitHub: gemini-2.0-flash-lite is the lite variant
-const MODEL = 'gemini-2.0-flash-lite'
+// Use Gemini 2.0 Flash Exp (latest fast model from Context7 docs)
+const MODEL = 'gemini-2.0-flash-exp'
 
 export interface ConversationAnalysis {
   quality: number // 1-100
@@ -138,6 +135,80 @@ export const getRandomEvent = (): RandomEvent => {
   return randomEvents[Math.floor(Math.random() * randomEvents.length)]
 }
 
+/**
+ * Generate personalized conversation topics using AI
+ * Based on family roles, current challenge, and bonding context
+ */
+export const generateConversationTopics = async (context: {
+  familyMembers: { name: string; role: string; age?: number }[]
+  currentChallenge?: string
+  bondingLevel?: 'low' | 'medium' | 'high'
+}): Promise<string[]> => {
+  try {
+    if (!ai) {
+      console.warn('⚠️ Gemini API not initialized, using fallback topics')
+      // Return 3 random topics as fallback
+      const shuffled = [...conversationTopics].sort(() => Math.random() - 0.5)
+      return shuffled.slice(0, 3)
+    }
+
+    console.log('🤖 Generating AI-powered conversation topics...', context)
+
+    const familyContext = context.familyMembers
+      .map(m => `${m.name} (${m.role}${m.age ? `, age ${m.age}` : ''})`)
+      .join(', ')
+
+    const prompt = `Generate 3-5 engaging conversation topics for a Singapore intergenerational family game session.
+
+Family Members: ${familyContext}
+Current Challenge: ${context.currentChallenge || 'Cooking a traditional dish together'}
+Bonding Level: ${context.bondingLevel || 'medium'}
+
+Requirements:
+1. Topics should encourage intergenerational dialogue (elderly + teenagers + youngsters)
+2. Focus on Singapore culture, cooking, food traditions, wet markets, or family heritage
+3. Create common ground between generations (e.g., traditional vs modern cooking methods)
+4. Each topic should be a conversation starter (question or prompt)
+5. Keep topics friendly, respectful, and age-appropriate
+6. Topics should relate to the cooking challenge if possible
+
+Return ONLY a JSON array of 3-5 topic strings, nothing else. Example format:
+["Topic 1 here", "Topic 2 here", "Topic 3 here"]`
+
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: {
+        maxOutputTokens: 500,
+        temperature: 0.8,
+        topP: 0.9
+      }
+    })
+
+    if (!response || !response.text) {
+      throw new Error('Empty response from Gemini API')
+    }
+
+    // Parse JSON response
+    const jsonMatch = response.text.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) {
+      throw new Error('Could not parse topics from response')
+    }
+
+    const topics: string[] = JSON.parse(jsonMatch[0])
+    console.log('✅ AI topics generated:', topics)
+
+    return topics.slice(0, 5) // Max 5 topics
+
+  } catch (error) {
+    console.error('❌ Failed to generate AI topics:', error)
+    
+    // Fallback: return 3 random static topics
+    const shuffled = [...conversationTopics].sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, 3)
+  }
+}
+
 export const generateText = async (prompt: string): Promise<string> => {
   try {
     // Check if API is properly initialized
@@ -145,37 +216,27 @@ export const generateText = async (prompt: string): Promise<string> => {
       throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
     }
 
-    console.log(`📝 Generating text with Gemini ${MODEL}...`)
+    console.log(`📝 Generating text with ${MODEL}...`)
 
-    // Use latest Google Gen AI SDK pattern based on Context7, DeepWiki & GitHub documentation
-    // Source: https://github.com/googleapis/js-genai (Context7: 20000 tokens)
-    // Proper contents structure: string or array with role/parts format
-    const systemInstruction = `You are an AI assistant with extensive knowledge from:
-    - Context7 (20000 token context window from googleapis/js-genai documentation)
-    - DeepWiki knowledge base (googleapis/js-genai repository structure)
-    - GitHub MCP server integration (live examples and best practices)
-    
-    You specialize in Singapore family dynamics, intergenerational relationships, and cultural contexts.
-    Provide helpful, culturally appropriate responses for family gaming experiences.`
-
+    // Correct Pattern from Context7 docs:
+    // await ai.models.generateContent({ model: 'gemini-2.0-flash-exp', contents: 'prompt' })
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: prompt, // Simplified format: string or ContentListUnion
+      contents: prompt,
       config: {
-        systemInstruction,
-        temperature: 0.8,
         maxOutputTokens: 2000,
-        topK: 40,
-        topP: 0.95
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 40
       }
     })
 
-    // Use correct response access pattern from SDK documentation
+    // Access response.text directly (from Context7 docs)
     if (!response || !response.text) {
       throw new Error('Empty response from Gemini API')
     }
 
-    console.log('✅ Received text response from Gemini API')
+    console.log('✅ Text generation successful')
     return response.text
 
   } catch (error) {
@@ -248,28 +309,17 @@ export const generatePreGameChallenge = async (gameSession: any, boardAnalysis: 
     }
     `
     
-    // Use correct Google Gen AI SDK pattern based on Context7, DeepWiki & GitHub documentation
-    // Source: googleapis/js-genai - proper structured JSON output with responseMimeType
-    const systemInstruction = `You are an AI challenge generator with extensive knowledge from:
-    - Context7 (20000 token context window from googleapis/js-genai documentation)
-    - DeepWiki knowledge base for Singapore culture and family dynamics
-    - GitHub MCP server integration with real-world examples
-    
-    You create engaging, culturally appropriate challenges for Singapore families.
-    Focus on intergenerational bonding, local context (hawker centers, MRT, HDB flats, local foods), 
-    and challenges that bring different generations together through shared activities.`
-
+    // Use Context7 pattern for JSON output
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: prompt, // Simplified: accepts string directly
+      contents: prompt,
       config: {
-        systemInstruction: systemInstruction,
         maxOutputTokens: 2000,
-        responseMimeType: "application/json" // Ensures structured JSON output
+        temperature: 0.7
       }
     })
 
-    // Use correct response access
+    // Access response.text
     if (!response || !response.text) {
       throw new Error('Empty response from Gemini API')
     }

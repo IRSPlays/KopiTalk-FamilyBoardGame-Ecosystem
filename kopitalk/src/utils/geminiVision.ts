@@ -1,44 +1,38 @@
 /**
  * Gemini Vision API Integration for Multimodal Image Processing
  * 
- * Documentation Sources (October 2025):
- * - Context7: 20,000 tokens from googleapis/js-genai SDK documentation
- * - DeepWiki: googleapis/js-genai repository structure and multimodal examples
- * - GitHub MCP: Live vision processing patterns and best practices
+ * Documentation Source: Context7 @google/genai (October 2025)
+ * Verified SDK: @google/genai v1.19.0 (NEW unified SDK)
  * 
- * Key SDK Features Used:
- * - Multimodal vision processing with image inlineData
- * - Mixed content: image + text in single request
- * - Structured JSON outputs with responseMimeType
- * - System instructions with comprehensive context
+ * Key Patterns from Context7:
+ * - GoogleGenAI class initialization
+ * - generateContent() with multimodal contents array
+ * - Image format: { inlineData: { data: base64, mimeType: 'image/jpeg' } }
+ * - Model: 'gemini-2.0-flash-exp' supports vision
  * 
- * Latest SDK Patterns (from Context7/DeepWiki/GitHub):
- * - Image format: inlineData object with base64 data and mimeType
- * - Contents format: array with image part and text prompt as separate elements
- * - Response handling: result.text for generated analysis
- * - JSON parsing: responseMimeType ensures clean JSON output
- * 
- * @see https://github.com/googleapis/js-genai
- * @see https://googleapis.github.io/js-genai/release_docs/
+ * @see Context7: /googleapis/js-genai
  */
 import { GoogleGenAI } from '@google/genai'
 
-// Initialize Gemini API
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY || 'demo-key'
+// Get API key from environment
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY
 
-// Initialize with proper error handling following latest SDK standards (October 2025)
+// Initialize Gemini API with proper error handling
 let ai: GoogleGenAI | null = null
-try {
-  ai = new GoogleGenAI({ apiKey: API_KEY })
-  console.log('✅ Gemini Vision API initialized successfully with key:', API_KEY ? '***' + API_KEY.slice(-4) : 'NOT_PROVIDED')
-} catch (error) {
-  console.error('❌ Failed to initialize Gemini Vision API:', error)
-  console.warn('Please set VITE_GEMINI_API_KEY or VITE_GOOGLE_API_KEY environment variable')
+
+if (!API_KEY || API_KEY === 'demo-key') {
+  console.error('❌ Gemini Vision API key not configured')
+} else {
+  try {
+    ai = new GoogleGenAI({ apiKey: API_KEY })
+    console.log('✅ Gemini Vision API initialized')
+  } catch (error) {
+    console.error('❌ Failed to initialize Gemini Vision API:', error)
+  }
 }
 
-// Use Gemini 2.0 Flash Lite model (lightweight, cost-effective model as of October 2025)
-// Research from Context7 (20k tokens), DeepWiki, GitHub: gemini-2.0-flash-lite is the lite variant
-const MODEL = 'gemini-2.0-flash-lite'
+// Use Gemini 2.0 Flash Exp (supports vision)
+const MODEL = 'gemini-2.0-flash-exp'
 
 export interface ModuleSuggestion {
   module_type: string
@@ -87,15 +81,27 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
       return generateFallbackAnalysis(difficulty)
     }
 
-    console.log('🖼️ Analyzing board image with Gemini 2.5-flash Vision...', {
+    console.log('🖼️ Analyzing board image with Gemini 2.0-flash Vision...', {
       difficulty,
       imageType: imageFile.type,
       imageSize: Math.round(imageFile.size / 1024) + 'KB'
     })
 
-    // Convert image to base64
+    // FIXED: Convert image to base64 using chunked conversion (prevents stack overflow)
+    // Issue: Spread operator causes "Maximum call stack size exceeded" for large images
+    // Solution: Process in 8KB chunks instead
     const arrayBuffer = await imageFile.arrayBuffer()
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const uint8Array = new Uint8Array(arrayBuffer)
+    
+    let binaryString = ''
+    const chunkSize = 8192 // Process 8KB at a time
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk))
+    }
+    const base64Image = btoa(binaryString)
+    
+    console.log('✅ Base64 conversion complete, chunks processed:', Math.ceil(uint8Array.length / chunkSize))
     
     const prompt = `
     Analyze this modular board game image for optimal family gameplay setup.
@@ -133,16 +139,8 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
     }
     `
     
-    // Use latest Google Gen AI SDK multimodal pattern from Context7, DeepWiki & GitHub docs
-    // Source: googleapis/js-genai - proper multimodal vision with image inlineData
-    // Multimodal format: array with image part + text part as separate elements
-    const systemInstruction = `You are an AI assistant that analyzes board games with extensive knowledge from:
-    - Context7 (20000 token context window from googleapis/js-genai documentation)
-    - DeepWiki knowledge base (googleapis/js-genai multimodal vision examples)
-    - GitHub MCP server integration (image processing patterns and best practices)
-    
-    Analyze board layouts for optimal family gameplay, considering Singapore cultural context and intergenerational accessibility.`
-
+    // Multimodal pattern from Context7:
+    // contents: array with { inlineData: { data, mimeType } } and text
     const result = await ai.models.generateContent({
       model: MODEL,
       contents: [
@@ -155,10 +153,8 @@ export const analyzeBoardImage = async (imageFile: File, difficulty: string): Pr
         prompt
       ],
       config: {
-        systemInstruction,
         temperature: 0.7,
-        maxOutputTokens: 2048,
-        responseMimeType: 'application/json' // Structured JSON output for reliable parsing
+        maxOutputTokens: 2048
       }
     })
     

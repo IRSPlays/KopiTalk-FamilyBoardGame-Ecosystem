@@ -18,7 +18,8 @@ export interface GameSession {
 
 export interface FamilyMember {
   name: string
-  role: 'son' | 'daughter' | 'grandfather' | 'grandmother' | 'parent' | 'child' | 'youth' | 'elderly'
+  age?: number // Age of family member for age-based filtering
+  role: 'son' | 'daughter' | 'grandfather' | 'grandmother' | 'parent' | 'child' | 'youth' | 'elderly' | 'grandparent'
   position: number // Position on custom D.I.Y. board
   points: number
   cash: number // Starts at $0 - earned through activities

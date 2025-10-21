@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Mic, MicOff, Play, Pause, Upload, X, Volume2 } from 'lucide-react'
+import { Mic, MicOff, Play, Pause, Upload, X, Volume2, Sparkles, Loader } from 'lucide-react'
 import { useReactMediaRecorder } from 'react-media-recorder'
-import { analyzeConversation, ConversationAnalysis } from '../utils/geminiApi'
+import { analyzeConversation, ConversationAnalysis, generateConversationTopics } from '../utils/geminiApi'
+import { useGameStore } from '../stores/gameStore'
 
 interface Props {
   isOpen: boolean
@@ -13,6 +14,13 @@ const AudioRecordingModal: React.FC<Props> = ({ isOpen, onClose, onAnalysisCompl
   const [isPlaying, setIsPlaying] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [suggestedTopics, setSuggestedTopics] = useState<string[]>([])
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
+  const [loadingTopics, setLoadingTopics] = useState(false)
+  const [showTopics, setShowTopics] = useState(true)
+  
+  const players = useGameStore(state => state.players)
+  const dishChallenge = useGameStore(state => state.dishChallenge)
   
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -66,10 +74,34 @@ const AudioRecordingModal: React.FC<Props> = ({ isOpen, onClose, onAnalysisCompl
       setIsPlaying(false)
       setRecordingTime(0)
       setIsAnalyzing(false)
+      setShowTopics(true)
+      setSelectedTopic(null)
       if (timerRef.current) clearInterval(timerRef.current)
       clearBlobUrl()
     }
   }, [isOpen, clearBlobUrl])
+
+  // Load AI-generated topics when modal opens
+  useEffect(() => {
+    const loadTopics = async () => {
+      if (isOpen && suggestedTopics.length === 0) {
+        setLoadingTopics(true)
+        try {
+          const topics = await generateConversationTopics({
+            familyMembers: players.map(p => ({ name: p.name, role: p.role, age: p.age })),
+            currentChallenge: dishChallenge?.dish_name,
+            bondingLevel: 'medium'
+          })
+          setSuggestedTopics(topics)
+        } catch (error) {
+          console.error('Failed to load topics:', error)
+        } finally {
+          setLoadingTopics(false)
+        }
+      }
+    }
+    loadTopics()
+  }, [isOpen, suggestedTopics.length, players, dishChallenge])
 
   const playAudio = () => {
     if (mediaBlobUrl && audioRef.current) {
@@ -172,13 +204,16 @@ const AudioRecordingModal: React.FC<Props> = ({ isOpen, onClose, onAnalysisCompl
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">Record Conversation</h2>
+          <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <Mic className="w-5 h-5" />
+            Record Conversation
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
-            disabled={isAnalyzing}
+            disabled={isAnalyzing || isRecording}
           >
             <X className="w-5 h-5" />
           </button>
@@ -191,6 +226,59 @@ const AudioRecordingModal: React.FC<Props> = ({ isOpen, onClose, onAnalysisCompl
                 ? 'Please allow microphone access to record conversations.'
                 : `Recording error: ${error}`
               }
+            </p>
+          </div>
+        )}
+
+        {/* AI-Generated Topic Suggestions - Show before recording */}
+        {showTopics && !isRecording && !hasRecording && (
+          <div className="mb-6 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              <h3 className="font-semibold text-gray-800">AI Suggested Topics</h3>
+            </div>
+            
+            {loadingTopics ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader className="w-6 h-6 text-purple-600 animate-spin" />
+                <p className="ml-2 text-gray-600">Generating personalized topics...</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600 mb-3">
+                  Choose a topic to start your family conversation (or skip):
+                </p>
+                <div className="space-y-2">
+                  {suggestedTopics.map((topic, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedTopic(topic === selectedTopic ? null : topic)}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                        selectedTopic === topic
+                          ? 'border-purple-500 bg-purple-100 text-purple-900'
+                          : 'border-gray-200 bg-white hover:border-purple-300'
+                      }`}
+                    >
+                      <p className="text-sm font-medium">{topic}</p>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowTopics(false)}
+                  className="mt-3 text-sm text-gray-500 hover:text-gray-700 underline"
+                >
+                  Skip & start recording
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Selected Topic Display */}
+        {selectedTopic && !isRecording && (
+          <div className="mb-4 p-3 bg-purple-100 border-2 border-purple-300 rounded-lg">
+            <p className="text-sm font-medium text-purple-900">
+              💬 Topic: {selectedTopic}
             </p>
           </div>
         )}
@@ -227,18 +315,29 @@ const AudioRecordingModal: React.FC<Props> = ({ isOpen, onClose, onAnalysisCompl
         </div>
 
         <div className="flex gap-3 justify-center mb-6">
-          {!hasRecording && canRecord && (
+          {/* START RECORDING BUTTON */}
+          {!hasRecording && !isRecording && canRecord && (
             <button
-              onClick={isRecording ? stopRecording : startRecording}
+              onClick={() => {
+                setShowTopics(false)
+                startRecording()
+              }}
               disabled={status !== 'idle' && status !== 'stopped' || error === 'permission_denied'}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                isRecording
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-kopi-500 hover:bg-kopi-600 text-white'
-              }`}
+              className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-kopi-500 to-talk-500 hover:from-kopi-600 hover:to-talk-600 text-white rounded-xl font-semibold text-lg shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              {isRecording ? 'Stop Recording' : 'Start Recording'}
+              <Mic className="w-5 h-5" />
+              Start Recording
+            </button>
+          )}
+
+          {/* STOP RECORDING BUTTON - Prominent during recording */}
+          {isRecording && (
+            <button
+              onClick={stopRecording}
+              className="flex items-center gap-2 px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold text-lg shadow-lg transition-all animate-pulse"
+            >
+              <MicOff className="w-5 h-5" />
+              Stop Recording
             </button>
           )}
 
