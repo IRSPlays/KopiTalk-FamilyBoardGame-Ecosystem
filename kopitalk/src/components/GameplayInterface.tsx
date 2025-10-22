@@ -19,6 +19,7 @@ import GameSettingsPanel from './GameSettingsPanel'
 import ChallengeBanner from './ChallengeBanner'
 import Breadcrumb from './Breadcrumb'
 import MRTStation from './MRTStation'
+import ActivitiesHub from './ActivitiesHub'
 import { ConversationAnalysis, VideoAnalysis, RandomEvent, getRandomEvent } from '../utils/geminiApi'
 import { useGameStore } from '../stores/gameStore'
 
@@ -81,6 +82,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
   const [showAudioModal, setShowAudioModal] = useState(false)
   const [showTikTokModal, setShowTikTokModal] = useState(false)
   const [showEZLinkModal, setShowEZLinkModal] = useState(false)
+  const [showActivitiesHub, setShowActivitiesHub] = useState(false)
   const [currentEvent, setCurrentEvent] = useState<RandomEvent | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
   const [pendingMovement, setPendingMovement] = useState<number>(0)
@@ -652,8 +654,8 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                     <p className="text-xs opacity-90">Self-checkout shopping</p>
                   </motion.button>
 
-                  {/* WET MARKET */}
-                  <motion.button
+                  {/* WET MARKET - TEMPORARILY DISABLED */}
+                  {/* <motion.button
                     variants={cardHoverVariants}
                     whileHover="hover"
                     whileTap="tap"
@@ -663,7 +665,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                     <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
                     <h3 className="font-semibold text-sm sm:text-base mb-1">Wet Market</h3>
                     <p className="text-xs opacity-90">Traditional market visit</p>
-                  </motion.button>
+                  </motion.button> */}
 
                   {/* COOKING GAME */}
                   <motion.button
@@ -700,7 +702,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                     variants={cardHoverVariants}
                     whileHover="hover"
                     whileTap="tap"
-                    onClick={() => startModule(singaporeLifeModules.find(m => m.id === 'activities')!)}
+                    onClick={() => setShowActivitiesHub(true)}
                     className="p-4 sm:p-5 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
                   >
                     <Activity className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
@@ -952,6 +954,14 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
             // Update player position on board
             setShowEZLinkModal(false)
           }}
+        />
+      )}
+
+      {/* ✅ ACTIVITIES HUB MODAL: Bonding Activities */}
+      {showActivitiesHub && (
+        <ActivitiesHub
+          currentPlayerId={gameSession.currentPlayerIndex}
+          onClose={() => setShowActivitiesHub(false)}
         />
       )}
     </div>

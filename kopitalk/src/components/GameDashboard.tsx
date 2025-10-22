@@ -264,18 +264,21 @@ const GameDashboard: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Singapore Life Modules</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: ShoppingCart, label: 'Delivery Apps', color: 'blue', path: '/delivery' },
-              { icon: ChefHat, label: 'Cooking Game', color: 'orange', path: '/cooking' },
-              { icon: MapPin, label: 'Bus Timings', color: 'green', path: '/bus' },
-              { icon: CreditCard, label: 'EZ-Link Top-up', color: 'purple', path: '/ezlink' }
+              { icon: ShoppingCart, label: 'Delivery Apps', color: 'blue', path: '/delivery', bgColor: 'bg-blue-100', textColor: 'text-blue-600', borderColor: 'hover:border-blue-200' },
+              { icon: ChefHat, label: 'Cooking Game', color: 'orange', path: '/cooking', bgColor: 'bg-orange-100', textColor: 'text-orange-600', borderColor: 'hover:border-orange-200' },
+              { icon: MapPin, label: 'Bus Timings', color: 'green', path: '/bus', bgColor: 'bg-green-100', textColor: 'text-green-600', borderColor: 'hover:border-green-200' },
+              { icon: CreditCard, label: 'EZ-Link Top-up', color: 'purple', path: '/ezlink', bgColor: 'bg-purple-100', textColor: 'text-purple-600', borderColor: 'hover:border-purple-200' }
             ].map((module, index) => (
               <button
                 key={index}
-                onClick={() => navigate(module.path)}
-                className={`p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border border-gray-100 hover:border-${module.color}-200 group`}
+                onClick={() => {
+                  console.log(`📍 [NAVIGATION] Navigating to: ${module.path}`)
+                  navigate(module.path)
+                }}
+                className={`p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border border-gray-100 ${module.borderColor} group`}
               >
-                <div className={`w-12 h-12 bg-${module.color}-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
-                  <module.icon className={`w-6 h-6 text-${module.color}-600`} />
+                <div className={`w-12 h-12 ${module.bgColor} rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+                  <module.icon className={`w-6 h-6 ${module.textColor}`} />
                 </div>
                 <p className="font-medium text-gray-800">{module.label}</p>
               </button>

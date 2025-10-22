@@ -212,16 +212,35 @@ export const useGameStore = create<GameStore>()(
       })),
       
       // Economy
-      updateFamilyBudget: (amount) => set(state => ({
-        family_budget: Math.max(0, state.family_budget + amount)
-      })),
+      updateFamilyBudget: (amount) => {
+        const state = get()
+        const newBudget = Math.max(0, state.family_budget + amount)
+        console.log(`💰 [DEBUG] updateFamilyBudget called:`, {
+          amount,
+          currentBudget: state.family_budget,
+          newBudget
+        })
+        set({ family_budget: newBudget })
+      },
       
       deductFamilyBudget: (amount) => {
         const state = get()
+        console.log(`🔍 [DEBUG] deductFamilyBudget called:`, {
+          amount,
+          currentBudget: state.family_budget,
+          canAfford: state.family_budget >= amount
+        })
         if (state.family_budget >= amount) {
-          set({ family_budget: state.family_budget - amount })
+          const newBudget = state.family_budget - amount
+          set({ family_budget: newBudget })
+          console.log(`✅ [DEBUG] Budget deducted successfully:`, {
+            oldBudget: state.family_budget,
+            deducted: amount,
+            newBudget
+          })
           return true
         }
+        console.log(`❌ [DEBUG] Insufficient budget, deduction failed`)
         return false
       },
       

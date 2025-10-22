@@ -36,6 +36,7 @@ const SupermarketSelfOrder: React.FC = () => {
   const markIngredientCollected = useGameStore(state => state.markIngredientCollected)
   const family_budget = useGameStore(state => state.family_budget)
   const updateFamilyBudget = useGameStore(state => state.updateFamilyBudget)
+  const deductFamilyBudget = useGameStore(state => state.deductFamilyBudget)
   const addCompletedActivity = useGameStore(state => state.addCompletedActivity)
   const activeWeatherChallenge = useGameStore(state => state.activeWeatherChallenge)
   const players = useGameStore(state => state.players)
@@ -57,7 +58,7 @@ const SupermarketSelfOrder: React.FC = () => {
   // Helper function to check if ingredient is already collected
   const isIngredientCollected = (itemName: string): boolean => {
     return collectedIngredients.some(
-      ing => ing.name.toLowerCase() === itemName.toLowerCase()
+      ing => ing.name.toLowerCase() === itemName.toLowerCase() && ing.collected === true
     )
   }
 
@@ -337,19 +338,39 @@ const SupermarketSelfOrder: React.FC = () => {
     setIsProcessing(true)
 
     setTimeout(() => {
+      console.log(`🛒 [SUPERMARKET] Checkout processing:`, {
+        cartItems: cart.length,
+        cartTotal,
+        currentBudget: family_budget
+      })
+      
+      // Deduct the cart total from family budget
+      console.log(`🛒 [SUPERMARKET] Attempting to deduct $${cartTotal}...`)
+      const deducted = deductFamilyBudget(cartTotal)
+      if (!deducted) {
+        toast.error(`❌ Failed to deduct budget!`)
+        console.error(`❌ [SUPERMARKET] Deduction failed!`)
+        setIsProcessing(false)
+        return
+      }
+      console.log(`✅ [SUPERMARKET] Budget deducted successfully`)
+
       // Calculate earnings and mark ingredients as collected
       const requiredItemsInCart = cart.filter(item => item.isRequired)
       const earnings = Math.floor(requiredItemsInCart.length * 2.5) + 8 // $8 base + $2.5 per required ingredient
       
+      console.log(`🛒 [SUPERMARKET] Marking ${requiredItemsInCart.length} ingredients as collected`)
       // Mark ingredients as collected
       cart.forEach(item => {
         if (item.isRequired && !item.alreadyCollected) {
           markIngredientCollected(item.name, 'supermarket')
+          console.log(`✅ [SUPERMARKET] Marked "${item.name}" as collected`)
         }
       })
 
-      // Update budget (deduct cost, add earnings)
-      updateFamilyBudget(family_budget - cartTotal + earnings)
+      // Add the earnings from completing the activity
+      console.log(`🛒 [SUPERMARKET] Adding earnings: $${earnings}`)
+      updateFamilyBudget(earnings)
 
       // Track activity
       addCompletedActivity({

@@ -3,6 +3,7 @@ import { ArrowLeft, ChefHat, Clock, Users, Star, CheckCircle, Play, Pause, Gamep
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { navigateToGame } from '../utils/navigationHelper'
+import Breadcrumb from '../components/Breadcrumb'
 
 interface Recipe {
   id: string
@@ -182,17 +183,19 @@ const CookingGame: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: 'Home', path: '/' },
+          { label: 'Game', path: '/game' },
+          { label: 'Cooking Recipes', path: undefined, isActive: true }
+        ]}
+        onBack={() => navigateToGame(navigate)}
+      />
+
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <motion.button
-            onClick={() => navigateToGame(navigate)}
-            className="p-2 hover:bg-white rounded-lg transition-colors"
-            whileHover={{ scale: 1.1, x: -3 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </motion.button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Family Cooking</h1>
             <p className="text-gray-600">Learn traditional Singapore recipes together</p>

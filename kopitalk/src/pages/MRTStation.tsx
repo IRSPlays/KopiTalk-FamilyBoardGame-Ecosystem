@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Train, CreditCard, MapPin, Clock, Zap, DollarSign, Navigation } from 'lucide-react'
 import { useGameStore } from '../stores/gameStore'
+import toast from 'react-hot-toast'
 
 interface MRTStationProps {
   currentPlayerId: number
@@ -29,10 +30,10 @@ const MRTStation: React.FC<MRTStationProps> = ({ currentPlayerId, onClose, onTra
 
   const handleTopUp = () => {
     if (topUpEzLink(currentPlayerId, topUpAmount)) {
-      alert(`✅ Topped up $${topUpAmount} to EZ-Link!`)
+      toast.success(`Topped up $${topUpAmount} to EZ-Link!`, { icon: '💳' })
       setShowTopUp(false)
     } else {
-      alert(`❌ Insufficient family budget! Need $${topUpAmount}, have $${familyBudget}`)
+      toast.error(`Insufficient family budget! Need $${topUpAmount}, have $${familyBudget}`, { icon: '❌' })
     }
   }
 
@@ -60,7 +61,7 @@ const MRTStation: React.FC<MRTStationProps> = ({ currentPlayerId, onClose, onTra
         }
       })
 
-      alert(`🚇 Traveled to ${station.properties?.name || 'MRT Station'}! Fare: $${fare}`)
+      toast.success(`Traveled to ${station.properties?.name || 'MRT Station'}! Fare: $${fare}`, { icon: '🚇' })
       
       if (onTravelComplete) {
         onTravelComplete(station.position)
@@ -68,7 +69,7 @@ const MRTStation: React.FC<MRTStationProps> = ({ currentPlayerId, onClose, onTra
       
       onClose()
     } else {
-      alert(`❌ Insufficient EZ-Link balance! Need $${fare}, have $${player.ezlink_balance.toFixed(2)}`)
+      toast.error(`Insufficient EZ-Link balance! Need $${fare}, have $${player.ezlink_balance.toFixed(2)}`, { icon: '❌' })
       setShowTopUp(true)
     }
   }

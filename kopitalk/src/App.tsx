@@ -13,6 +13,7 @@ import CookingGameMode from './pages/CookingGameMode'
 import SupermarketShopping from './components/SupermarketShopping'
 import CookingGameComponent from './components/CookingGameComponent'
 import CookingGameInteractive from './components/CookingGameInteractive'
+import CookingGame2D from './components/CookingGame2D'
 
 function App() {
   return (
@@ -70,7 +71,8 @@ function App() {
           <Route path="/mrt" element={<MRTStation currentPlayerId={1} onClose={() => window.history.back()} />} />
           <Route path="/supermarket" element={<SupermarketShopping />} />
           <Route path="/supermarket-self-order" element={<SupermarketSelfOrder />} />
-          <Route path="/cooking-challenge" element={<CookingGameInteractive />} />
+          <Route path="/cooking-challenge" element={<CookingGame2D />} />
+          <Route path="/cooking-interactive" element={<CookingGameInteractive />} />
           <Route path="/cooking-game" element={<CookingGameMode dish={{ 
             id: 'test',
             dish_name: 'Test Dish',

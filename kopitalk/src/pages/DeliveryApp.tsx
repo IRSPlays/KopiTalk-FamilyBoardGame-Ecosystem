@@ -41,6 +41,7 @@ const DeliveryApp: React.FC = () => {
   const markIngredientCollected = useGameStore(state => state.markIngredientCollected)
   const family_budget = useGameStore(state => state.family_budget)
   const updateFamilyBudget = useGameStore(state => state.updateFamilyBudget)
+  const deductFamilyBudget = useGameStore(state => state.deductFamilyBudget)
   const addCompletedActivity = useGameStore(state => state.addCompletedActivity)
   const activeWeatherChallenge = useGameStore(state => state.activeWeatherChallenge)
   
@@ -75,7 +76,7 @@ const DeliveryApp: React.FC = () => {
 
   const isIngredientCollected = (itemName: string): boolean => {
     return collectedIngredients.some(
-      ing => ing.name.toLowerCase() === itemName.toLowerCase()
+      ing => ing.name.toLowerCase() === itemName.toLowerCase() && ing.collected === true
     )
   }
 
@@ -225,21 +226,45 @@ const DeliveryApp: React.FC = () => {
     if (!selectedStore) return
     
     const total = calculateTotal()
+    
+    console.log(`🛒 [DELIVERY APP] Checkout initiated:`, {
+      store: selectedStore.name,
+      cartItems: cart.length,
+      total,
+      currentBudget: family_budget
+    })
+    
+    // Check if can afford
     if (total > family_budget) {
       alert(`Not enough budget! Need $${total.toFixed(2)} but only have $${family_budget.toFixed(2)}`)
       return
     }
 
+    // Deduct the total cost from family budget
+    console.log(`🛒 [DELIVERY APP] Attempting to deduct $${total}...`)
+    const deducted = deductFamilyBudget(total)
+    if (!deducted) {
+      alert(`Failed to deduct budget!`)
+      console.error(`❌ [DELIVERY APP] Deduction failed!`)
+      return
+    }
+    console.log(`✅ [DELIVERY APP] Budget deducted successfully`)
+
     const requiredItemsInCart = cart.filter(c => c.item.isRequired)
     const earnings = Math.floor(requiredItemsInCart.length * 3.5) + 10
 
+    console.log(`🛒 [DELIVERY APP] Marking ${requiredItemsInCart.length} ingredients as collected`)
+    // Mark ingredients as collected
     cart.forEach(c => {
       if (c.item.isRequired && !c.item.alreadyCollected) {
         markIngredientCollected(c.item.name, 'delivery')
+        console.log(`✅ [DELIVERY APP] Marked "${c.item.name}" as collected`)
       }
     })
 
-    updateFamilyBudget(family_budget - total + earnings)
+    // Add the earnings from completing the activity
+    console.log(`🛒 [DELIVERY APP] Adding earnings: $${earnings}`)
+    updateFamilyBudget(earnings)
 
     addCompletedActivity({
       id: `delivery-${Date.now()}`,
