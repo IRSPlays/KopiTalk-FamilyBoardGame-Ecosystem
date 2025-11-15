@@ -55,11 +55,16 @@ const SupermarketSelfOrder: React.FC = () => {
   const [timeRemaining, setTimeRemaining] = useState(180)
   const [timerActive, setTimerActive] = useState(false)
 
-  // Helper function to check if ingredient is already collected
+  // ✅ FIXED: Helper function to check if ingredient is already collected
   const isIngredientCollected = (itemName: string): boolean => {
-    return collectedIngredients.some(
-      ing => ing.name.toLowerCase() === itemName.toLowerCase() && ing.collected === true
+    // Check if this exact ingredient exists in collectedIngredients and is marked as collected
+    const ingredient = collectedIngredients.find(
+      ing => ing.name.toLowerCase().trim() === itemName.toLowerCase().trim()
     )
+    const result = ingredient?.collected === true
+    
+    // Debug logging removed for performance
+    return result
   }
 
   // Helper function to infer category from ingredient name
@@ -325,69 +330,74 @@ const SupermarketSelfOrder: React.FC = () => {
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   const handleCheckout = () => {
+    if (cart.length === 0) {
+      toast.error('Your cart is empty!')
+      return
+    }
+
     if (cartTotal > family_budget) {
-      alert(`❌ Not enough budget! Need $${cartTotal.toFixed(2)} but only have $${family_budget.toFixed(2)}`)
+      toast.error(`❌ Not enough budget! Need $${cartTotal.toFixed(2)} but only have $${family_budget.toFixed(2)}`, {
+        duration: 4000,
+        icon: '💰'
+      })
       return
     }
 
     if (!paymentMethod) {
-      alert('Please select a payment method')
+      toast.error('Please select a payment method', { icon: '💳' })
       return
     }
 
     setIsProcessing(true)
+    toast.loading('Processing payment...', { id: 'checkout' })
 
     setTimeout(() => {
-      console.log(`🛒 [SUPERMARKET] Checkout processing:`, {
-        cartItems: cart.length,
-        cartTotal,
-        currentBudget: family_budget
-      })
-      
-      // Deduct the cart total from family budget
-      console.log(`🛒 [SUPERMARKET] Attempting to deduct $${cartTotal}...`)
+      // ✅ Step 1: Deduct the purchase cost from family budget
       const deducted = deductFamilyBudget(cartTotal)
       if (!deducted) {
-        toast.error(`❌ Failed to deduct budget!`)
-        console.error(`❌ [SUPERMARKET] Deduction failed!`)
+        toast.error(`❌ Payment failed! Insufficient funds.`, { id: 'checkout' })
         setIsProcessing(false)
         return
       }
-      console.log(`✅ [SUPERMARKET] Budget deducted successfully`)
 
-      // Calculate earnings and mark ingredients as collected
-      const requiredItemsInCart = cart.filter(item => item.isRequired)
-      const earnings = Math.floor(requiredItemsInCart.length * 2.5) + 8 // $8 base + $2.5 per required ingredient
+      // ✅ Step 2: Mark ingredients as collected (this is shopping, not earning)
+      const requiredItemsInCart = cart.filter(item => item.isRequired && !item.alreadyCollected)
       
-      console.log(`🛒 [SUPERMARKET] Marking ${requiredItemsInCart.length} ingredients as collected`)
-      // Mark ingredients as collected
       cart.forEach(item => {
         if (item.isRequired && !item.alreadyCollected) {
           markIngredientCollected(item.name, 'supermarket')
-          console.log(`✅ [SUPERMARKET] Marked "${item.name}" as collected`)
         }
       })
 
-      // Add the earnings from completing the activity
-      console.log(`🛒 [SUPERMARKET] Adding earnings: $${earnings}`)
-      updateFamilyBudget(earnings)
+      // ✅ Step 3: Calculate earnings for completing the digital skills activity
+      // This is a reward for learning to use the self-order kiosk
+      const skillsEarnings = Math.floor(requiredItemsInCart.length * 2) + 10 // $10 base + $2 per ingredient learned
+      
+      // ✅ Step 4: Add the skills learning earnings (separate from purchase cost)
+      updateFamilyBudget(skillsEarnings)
 
-      // Track activity
+      // ✅ Step 5: Track activity completion
       addCompletedActivity({
         id: `supermarket-${Date.now()}`,
         type: 'digital_skills',
-        earnings,
+        earnings: skillsEarnings,
         timestamp: new Date().toISOString(),
         participants: players.map(p => p.id),
-        details: `Completed self-order kiosk tutorial - collected ${requiredItemsInCart.length} required ingredients`
+        details: `Completed self-order kiosk - Spent $${cartTotal.toFixed(2)}, Earned $${skillsEarnings} for learning, Net: ${skillsEarnings - cartTotal >= 0 ? '+' : ''}$${(skillsEarnings - cartTotal).toFixed(2)}`
       })
+
+      toast.success(
+        `✅ Purchase complete! Spent $${cartTotal.toFixed(2)}\n💰 Earned $${skillsEarnings} for learning!\n📊 Net: ${skillsEarnings - cartTotal >= 0 ? '+' : ''}$${(skillsEarnings - cartTotal).toFixed(2)}`,
+        { id: 'checkout', duration: 5000 }
+      )
 
       setIsProcessing(false)
       setTutorialActive(false)
       setTutorialStep('complete')
       
-      // Show success modal after brief delay
+      // Navigate back after showing success
       setTimeout(() => {
+        toast.success('🎉 Ingredients collected! Ready to cook!', { duration: 3000 })
         navigateToGame(navigate)
       }, 3000)
     }, 2000)
@@ -551,7 +561,19 @@ const SupermarketSelfOrder: React.FC = () => {
               <div>
                 <h3 className="font-semibold text-gray-900">Shopping for: {dishChallenge.dish_name}</h3>
                 <p className="text-sm text-gray-700">
-                  Need {dishChallenge.ingredients.filter(i => !isIngredientCollected(i.name)).length} more ingredients
+                  Need {(() => {
+                    const uncollected = dishChallenge.ingredients.filter(i => !isIngredientCollected(i.name)).length
+                    console.log(`🛒 [SUPERMARKET] Ingredient Status:`, {
+                      totalRequired: dishChallenge.ingredients.length,
+                      uncollected,
+                      collected: dishChallenge.ingredients.length - uncollected,
+                      allIngredients: dishChallenge.ingredients.map(i => ({
+                        name: i.name,
+                        isCollected: isIngredientCollected(i.name)
+                      }))
+                    })
+                    return uncollected
+                  })()} more ingredients
                 </p>
               </div>
             </div>

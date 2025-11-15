@@ -667,17 +667,20 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                     <p className="text-xs opacity-90">Traditional market visit</p>
                   </motion.button> */}
 
-                  {/* COOKING GAME */}
+                  {/* AI COOKING GAME - ENHANCED */}
                   <motion.button
                     variants={cardHoverVariants}
                     whileHover="hover"
                     whileTap="tap"
-                    onClick={() => navigate('/cooking-challenge')}
-                    className="p-4 sm:p-5 bg-gradient-to-br from-yellow-500 to-orange-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
+                    onClick={() => navigate('/cooking-ai')}
+                    className="p-4 sm:p-5 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all touch-manipulation"
                   >
-                    <ChefHat className="w-6 h-6 sm:w-7 sm:h-7 mb-2" />
-                    <h3 className="font-semibold text-sm sm:text-base mb-1">Cooking Game</h3>
-                    <p className="text-xs opacity-90">Cook the challenge dish</p>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <ChefHat className="w-5 h-5 sm:w-6 sm:h-6" />
+                      <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">AI Cooking</h3>
+                    <p className="text-xs opacity-90">Drag & drop with timers</p>
                   </motion.button>
 
                   {/* MRT TRANSPORT */}
@@ -960,7 +963,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
       {/* ✅ ACTIVITIES HUB MODAL: Bonding Activities */}
       {showActivitiesHub && (
         <ActivitiesHub
-          currentPlayerId={gameSession.currentPlayerIndex}
+          currentPlayerId={0}
           onClose={() => setShowActivitiesHub(false)}
         />
       )}

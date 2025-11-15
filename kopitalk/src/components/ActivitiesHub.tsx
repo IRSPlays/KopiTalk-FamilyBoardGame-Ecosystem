@@ -6,9 +6,9 @@ import {
 } from 'lucide-react'
 import { useGameStore } from '../stores/gameStore'
 
-// Import all activity components
-import DigitalSkillsTeaching from './DigitalSkillsTeaching'
-import LanguageExchange from './LanguageExchange'
+// Import all activity components - USING ENHANCED VERSIONS
+import DigitalSkillsTeachingEnhanced from './DigitalSkillsTeachingEnhanced'
+import LanguageExchangeEnhanced from './LanguageExchangeEnhanced'
 import CookingTipsExchange from './CookingTipsExchange'
 import TransportNavigation from './TransportNavigation'
 import HealthyEating from './HealthyEating'
@@ -128,8 +128,8 @@ const ActivitiesHub: React.FC<ActivitiesHubProps> = ({ currentPlayerId, onClose 
     const props = { currentPlayerId, onClose: () => setSelectedActivity(null) }
     
     switch (selectedActivity) {
-      case 'digital_skills': return <DigitalSkillsTeaching {...props} />
-      case 'language': return <LanguageExchange {...props} />
+      case 'digital_skills': return <DigitalSkillsTeachingEnhanced {...props} />
+      case 'language': return <LanguageExchangeEnhanced {...props} />
       case 'cooking_tips': return <CookingTipsExchange {...props} />
       case 'transport': return <TransportNavigation {...props} />
       case 'healthy_eating': return <HealthyEating {...props} />

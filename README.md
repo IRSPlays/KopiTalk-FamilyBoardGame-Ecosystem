@@ -8,11 +8,12 @@
 [![Vite](https://img.shields.io/badge/Vite-4.4.5-purple.svg)](https://vitejs.dev/)
 [![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.23.22-ff69b4.svg)](https://www.framer.com/motion/)
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-1.19.0-orange.svg)](https://ai.google.dev/)
+[![Zustand](https://img.shields.io/badge/Zustand-5.0.8-orange.svg)](https://github.com/pmndrs/zustand)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**A revolutionary D.I.Y. roleplay board game where families build custom boards, bridge generations through cooking, and experience Singapore life together. Elderly learn digital skills, youth discover traditional culture - all starting from zero money, earning through meaningful collaboration.**
+**A revolutionary D.I.Y. roleplay board game where families build custom boards with physical tiles, bridge generations through cooking, and experience Singapore life together. Elderly learn digital skills, youth discover traditional culture - all starting from $0, earning through meaningful collaboration.**
 
-[🎮 Start Building](#-quick-start) • [🎨 D.I.Y. Board Builder](#-diy-board-building) • [💰 Money Earning](#-money-earning-activities) • [🍳 Cooking Together](#-cooking-game-mode) • [🤖 AI Features](#-ai-integration)
+[🎮 Start Building](#-quick-start) • [🎨 D.I.Y. Board Builder](#-diy-board-building) • [💰 Money Earning](#-money-earning-activities) • [🍳 Cooking Together](#-cooking-game-mode) • [🤖 AI Features](#-ai-integration) • [📊 Implementation Status](#-implementation-status)
 
 </div>
 
@@ -21,31 +22,38 @@
 ## 🎯 **What Makes This Special?**
 
 ### **🔨 D.I.Y. Custom Board Building**
-Players physically place tiles to create their own unique Singapore map - markets, MRT stations, cooking areas, photo spots. The ESP32-CAM captures your custom layout, and the AI validates it for gameplay!
+Players **physically place tiles** (like building blocks) to create their own unique Singapore map - wet markets, MRT stations, cooking areas, supermarkets, photo spots, bus stops. The **ESP32-CAM captures your physical board layout**, and the AI validates it for gameplay! The app provides a **digital planning tool** (BoardBuilderModal), but the actual board is **PHYSICAL**.
 
 ### **🤝 Intergenerational Bonding Through Cooking**
-- **Elderly → Youth**: Traditional wet market skills, cooking techniques, cultural stories
-- **Youth → Elderly**: Digital payments, self-order kiosks, MRT navigation, social media
-- **Common Ground**: Cooking Singapore heritage dishes together
+- **Elderly → Youth**: Traditional wet market bargaining (calling vendors "auntie/uncle"), cooking techniques, cultural stories
+- **Youth → Elderly**: Digital payments (EZ-Link top-up), self-order kiosks, MRT tap-in/tap-out, mobile delivery apps, TikTok creation
+- **Common Ground**: Cooking Singapore heritage dishes together (Hainanese Chicken Rice, Laksa, Char Kway Teow)
 
-### **� Zero to Hero Economy**
-Everyone starts with **$0**. Earn money through:
-- 📸 **Photo Challenges** - Capture moments at markets, MRT, cooking ($10-20)
-- 📖 **Story Sharing** - Share family cooking memories ($10-20)
-- 🎯 **Cultural Quizzes** - Learn Singapore food heritage together ($5-15)
-- 📱 **Digital Skills** - Teach/learn mobile apps & payments ($8-15)
-- 🗣️ **Language Exchange** - Share dialects and slang ($5-10)
-- 🍳 **Cooking Tips** - Exchange traditional vs modern techniques ($10-20)
-- 🎭 **Market Roleplay** - Practice bargaining and shopping ($8-15)
-- 🚇 **Transport Navigation** - Plan MRT routes together ($10-18)
-- 🥗 **Healthy Eating** - Make nutritious choices as a family ($5-12)
-- 🏆 **Recipe Challenges** - Guess dishes from ingredients ($5-10)
+### **💵 Zero to Hero Economy**
+Everyone starts with **$0**. Earn money through 10+ bonding activities:
+- 📸 **Photo Challenges** - Capture moments at wet markets, MRT, cooking ($10-20)
+- 📖 **Story Sharing** - Share family cooking memories, childhood dishes ($10-20)
+- 🎯 **Cultural Quizzes** - Learn Singapore food heritage, festivals together ($5-15)
+- 📱 **Digital Skills Teaching** - Youth teach elderly: delivery apps, kiosks, EZ-Link ($8-15)
+- 🗣️ **Language Exchange** - Share dialects (Hokkien, Cantonese), Singlish slang ($5-10)
+- 🍳 **Cooking Tips Exchange** - Traditional vs modern techniques ($10-20)
+- 🎭 **Market Roleplay** - Practice wet market bargaining, haggling etiquette ($8-15)
+- 🚇 **Transport Navigation** - Plan MRT routes, teach bus timing apps ($10-18)
+- 🥗 **Healthy Eating Decisions** - Make nutritious choices as a family ($5-12)
+- 🏆 **Recipe Challenges** - Guess dishes from ingredients, match cooking methods ($5-10)
 
 ### **🎭 Continuous Roleplay (No Turns!)**
-Unlike traditional board games, everyone plays simultaneously. Movement is earned through **conversation quality** analyzed by AI - not dice rolls. The better you bond, the faster you progress!
+Unlike traditional board games, everyone plays **simultaneously**. Movement is earned through **conversation quality** analyzed by AI (1-5 tiles based on engagement, depth, cultural exchange) - not dice rolls. The better you bond through conversations, the faster you progress on the physical board!
 
 ### **🍜 AI-Generated Dish Challenges**
-After building your board, AI creates a random Singapore traditional dish with specific ingredients. Navigate your custom board to collect them from markets or delivery, then complete the interactive cooking game!
+After building your physical board, Google Gemini AI creates a **random Singapore traditional dish** (e.g., "Hainanese Chicken Rice with Ginger Paste") with specific ingredients. Navigate your custom board to collect them from wet markets (bargaining mode), supermarket delivery (youth teaches elderly), or self-order kiosks - then complete the interactive 2D cooking game!
+
+### **🇸🇬 Authentic Singapore Cultural Context**
+- **Wet Markets**: Bargaining etiquette, addressing vendors as auntie/uncle, fresh produce selection
+- **MRT System**: Tap-in/tap-out culture, standing on left of escalators, EZ-Link card management
+- **Hawker Centers**: Heritage food culture, table chope-ing (reserving with tissue packets)
+- **Chinese New Year**: Price surging at markets, festive dish preparation, reunion dinner traditions
+- **Transport**: Real-time bus timings, MRT route planning, elderly-friendly navigation teaching
 
 ---
 
@@ -313,9 +321,44 @@ GOOGLE_API_KEY=your_api_key_here
 ### 🔧 **Development & State**
 | Technology | Version | Purpose |
 |:-----------|:--------|:--------|
-| ![Zustand](https://img.shields.io/badge/Zustand-5.0.8-FF6B6B?style=flat) | `5.0.8` | Lightweight state management |
+| ![Zustand](https://img.shields.io/badge/Zustand-5.0.8-FF6B6B?style=flat) | `5.0.8` | Persist middleware, selector optimization, zero boilerplate |
 | ![React Router](https://img.shields.io/badge/React_Router-6.16.0-CA4245?style=flat&logo=react-router) | `6.16.0` | Client-side routing |
 | ![Lucide React](https://img.shields.io/badge/Lucide-0.288.0-F56565?style=flat) | `0.288.0` | Beautiful icon library |
+
+### 🎮 **State Architecture**
+**Zustand Store Features**:
+- ✅ **Persist Middleware**: Three-tier storage (games, current state, player progress)
+- ✅ **Selector Optimization**: Prevents unnecessary re-renders with granular subscriptions
+- ✅ **Version Migrations**: Schema evolution support for localStorage compatibility
+- ✅ **Partialize**: Selective persistence (game data saved, UI state ephemeral)
+- ✅ **Zero Boilerplate**: No reducers, actions, or dispatch - just direct updates
+
+**Key Store Functions** (used in all modernized components):
+```typescript
+// Economy Management
+updateFamilyBudget(amount: number)      // Add earnings from activities
+deductFamilyBudget(amount: number)      // Spend on purchases
+family_budget: number                    // Current budget (source of truth)
+
+// Activity Tracking
+addCompletedActivity({
+  id: string,
+  type: 'digital_skills' | 'transport' | 'cultural' | 'cooking',
+  timestamp: string,  // ISO format
+  earnings: number,
+  participants: string[],
+  details: object
+})
+completedActivities: CompletedActivity[] // All tracked activities
+
+// Ingredient Management
+markIngredientCollected(name: string, source: 'delivery' | 'supermarket' | 'wet_market')
+collectedIngredients: Ingredient[]      // Array with collected status
+
+// Challenge System
+setDishChallenge(challenge: DishChallenge) // AI-generated dish
+activeWeatherChallenge: WeatherChallenge   // Dynamic environmental effects
+```
 
 </div>
 
@@ -612,7 +655,265 @@ if (success) console.log('Games restored successfully')
 
 </div>
 
-## 🎯 Recent Achievements & Updates (September 2025)
+## 📊 Implementation Status & Research Insights
+
+<div align="center">
+
+### �️ **Current Development Progress (November 2025)**
+
+[![UI Components](https://img.shields.io/badge/UI_Components-40.6%25_Aligned-success.svg)](kopitalk/UI_AUDIT_REPORT.md)
+[![State Management](https://img.shields.io/badge/Zustand-Persist_Middleware-orange.svg)](https://github.com/pmndrs/zustand)
+[![Animations](https://img.shields.io/badge/Framer_Motion-Mobile_Optimized-ff69b4.svg)](https://motion.dev/)
+[![Cultural Context](https://img.shields.io/badge/Singapore_Culture-Authentic-red.svg)](#-authentic-singapore-cultural-context)
+
+</div>
+
+### 📋 **UI Audit Report Summary**
+
+**Total Components Audited**: 69 files (11 pages + 58 components)
+
+| Status | Count | Percentage | Details |
+|--------|-------|------------|---------|
+| ✅ **Aligned** | 28 | 40.6% | Modern, fits D.I.Y. purpose, gameStore integrated |
+| ⚠️ **Needs Update** | 31 | 44.9% | Partially aligned, minor gameStore updates needed |
+| ❌ **Outdated** | 10 | 14.5% | Must remake with full gameStore integration |
+
+**Completed Remakes (November 2025)**:
+- ✅ **DeliveryApp.tsx** - Full gameStore integration, weather challenges, earnings $10 + $3.5/required ingredient
+- ✅ **SupermarketSelfOrder.tsx** - Tutorial mode for youth-teaches-elderly, kiosk digital skills, earnings $8-12
+- ✅ **UI Audit** - Comprehensive 69-file audit with alignment matrix (UI_AUDIT_REPORT.md)
+- ✅ **Research** - Zustand patterns, Framer Motion mobile, Singapore culture (RESEARCH_NOTES.md)
+
+**In Progress**:
+- 🔄 **BusTimings & EZLinkTopUp** - Unified transport system with youth-teaches-elderly mode
+- 🔄 **GameHub** - Remove mock data, full gameStore integration
+- 🔄 **BoardGame** - Add BoardBuilderModal flow before gameplay
+
+### 🔬 **Research Insights from Context7 & Best Practices**
+
+<details>
+<summary><strong>🧩 Zustand State Management Patterns</strong> - Click to expand</summary>
+
+**Persist Middleware Best Practices**:
+```typescript
+// ✅ IMPLEMENTED: Three-tier storage with partialize
+export const useGameStore = create<GameStore>()(
+  persist(
+    (set, get) => ({
+      // State & actions
+      family_budget: 0,
+      collectedIngredients: [],
+      dishChallenge: null,
+      markIngredientCollected: (name, method) => set(state => ({
+        collectedIngredients: state.collectedIngredients.map(ing =>
+          ing.name.toLowerCase() === name.toLowerCase()
+            ? { ...ing, collected: true, collectionMethod: method }
+            : ing
+        )
+      }))
+    }),
+    {
+      name: 'singaplaygo-game-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        // Only persist game data, not UI state
+        customBoard: state.customBoard,
+        dishChallenge: state.dishChallenge,
+        players: state.players,
+        family_budget: state.family_budget,
+        collectedIngredients: state.collectedIngredients,
+        completedActivities: state.completedActivities
+      }),
+      version: 1 // For schema migrations
+    }
+  )
+)
+```
+
+**Selector Optimization** (prevents unnecessary re-renders):
+```typescript
+// ✅ IMPLEMENTED in all modernized components
+const dishChallenge = useGameStore(state => state.dishChallenge)
+const collectedIngredients = useGameStore(state => state.collectedIngredients)
+const markIngredientCollected = useGameStore(state => state.markIngredientCollected)
+
+// ❌ AVOID: Subscribing to entire store
+const store = useGameStore() // Re-renders on ANY state change
+```
+
+</details>
+
+<details>
+<summary><strong>🎨 Framer Motion Mobile Optimization</strong> - Click to expand</summary>
+
+**Spring Animations for 60fps Performance**:
+```typescript
+// ✅ IMPLEMENTED: Mobile-optimized spring physics
+<motion.div
+  animate={{ scale: 1.1 }}
+  transition={{ 
+    type: "spring",
+    stiffness: 300,  // Faster response
+    damping: 20,     // Smooth landing
+    mass: 0.5        // Lightweight feel
+  }}
+/>
+```
+
+**Reduced Motion Support** (accessibility):
+```typescript
+// ✅ IMPLEMENTED: Respects user preferences
+import { useReducedMotion } from 'framer-motion'
+
+const shouldReduceMotion = useReducedMotion()
+const animation = shouldReduceMotion 
+  ? { opacity: 1 }      // Simple fade
+  : { x: 0, scale: 1 }  // Full animation
+```
+
+**Touch-Optimized Gestures**:
+```typescript
+// ✅ IMPLEMENTED: 44px+ touch targets
+<motion.button
+  whileTap={{ scale: 0.95 }}
+  whileHover={{ scale: 1.05 }}
+  style={{ minHeight: '44px', minWidth: '44px' }} // WCAG AAA compliance
+/>
+```
+
+</details>
+
+<details>
+<summary><strong>🇸🇬 Singapore Cultural Authenticity Research</strong> - Click to expand</summary>
+
+**Wet Market Etiquette** (from DeepWiki research):
+- Address vendors as "auntie" or "uncle" (respectful, builds rapport)
+- Bargaining is expected, but be polite ("Can cheaper a bit?")
+- Fresh produce selection: Early morning for best quality
+- Cash preferred, exact change appreciated
+
+**MRT System Culture**:
+- Tap-in/tap-out with EZ-Link card (youth teach elderly)
+- Stand on left of escalators, walk on right
+- Priority seats for elderly, pregnant, disabled
+- Silent mode on mobile devices
+
+**Chinese New Year Impact**:
+- Market prices surge 20-30% before CNY
+- Reunion dinner ingredients in high demand
+- Traditional dishes: Yu Sheng (prosperity toss), Bak Kwa (BBQ pork)
+
+**Hawker Center Traditions**:
+- "Chope" culture: Reserve tables with tissue packets
+- Mix-and-match from different stalls
+- Return trays to designated areas (recent initiative)
+
+</details>
+
+### 🎯 **Component Architecture & State Flow**
+
+```mermaid
+graph LR
+    A[BoardBuilderModal] --> B[Physical Board Setup]
+    B --> C[ESP32-CAM Capture]
+    C --> D[Gemini Vision Analysis]
+    D --> E[AI Dish Generation]
+    E --> F[gameStore.setDishChallenge]
+    
+    F --> G[DeliveryApp]
+    F --> H[SupermarketSelfOrder]
+    F --> I[WetMarketShopping]
+    
+    G --> J[markIngredientCollected]
+    H --> J
+    I --> J
+    
+    J --> K[IngredientTracker]
+    K --> L{All Collected?}
+    L -->|Yes| M[CookingGame2D]
+    L -->|No| N[Continue Shopping]
+    
+    M --> O[updateFamilyBudget]
+    O --> P[Victory Screen]
+    
+    style F fill:#bfb,stroke:#333,stroke-width:2px
+    style J fill:#bbf,stroke:#333,stroke-width:2px
+    style O fill:#fbf,stroke:#333,stroke-width:2px
+```
+
+**State Management Flow**:
+1. **Board Building** → `customBoard` saved to gameStore
+2. **AI Dish Generation** → `dishChallenge` with ingredients array
+3. **Ingredient Collection** → `markIngredientCollected(name, method)` updates `collectedIngredients`
+4. **Activity Completion** → `addCompletedActivity({ type, earnings, timestamp })` updates `family_budget`
+5. **Cooking Success** → `completeGame()` triggers victory screen
+
+### 🎮 **Completed Component Features**
+
+<details>
+<summary><strong>✅ DeliveryApp.tsx - Fully Modernized</strong> - Click to expand</summary>
+
+**Key Features**:
+- **4 Delivery Stores**: FairPrice ($2.99), Cold Storage ($3.99), RedMart (free), ShengSiong ($2.50)
+- **Required Ingredient Highlighting**: Green gradient background + 2px border for `dishChallenge.ingredients`
+- **Weather Challenge Integration**: `priceMultiplier` from `activeWeatherChallenge` applied to prices
+- **Cart System**: Add/update quantity/remove with array state management
+- **Earnings**: $10 base + $3.5 per required ingredient collected
+- **Activity Tracking**: `{ id, type: 'digital_skills', timestamp: ISO, earnings, participants: [], details }`
+- **Mobile Optimized**: 44px touch targets, spring animations, CheckCircle2 icons
+- **gameStore Integration**: All state managed via Zustand selectors (no props drilling)
+
+**Code Pattern**:
+```typescript
+const dishChallenge = useGameStore(state => state.dishChallenge)
+const markIngredientCollected = useGameStore(state => state.markIngredientCollected)
+const updateFamilyBudget = useGameStore(state => state.updateFamilyBudget)
+const addCompletedActivity = useGameStore(state => state.addCompletedActivity)
+
+// Mark ingredient + update budget + track activity
+markIngredientCollected(item.name, 'delivery')
+updateFamilyBudget(earnings)
+addCompletedActivity({
+  id: Date.now().toString(),
+  type: 'digital_skills',
+  timestamp: new Date().toISOString(),
+  earnings: totalEarnings,
+  participants: players.map(p => p.id),
+  details: { store: selectedStore.name, items: cart.length }
+})
+```
+
+</details>
+
+<details>
+<summary><strong>✅ SupermarketSelfOrder.tsx - Tutorial Mode Complete</strong> - Click to expand</summary>
+
+**Key Features**:
+- **5-Step Tutorial**: Welcome → Browse → Add to cart → Review → Complete payment
+- **Youth-Teaches-Elderly**: Step-by-step guidance for digital kiosk skills
+- **20 Products**: 8 categories (vegetables, meat, seafood, grains, condiments, dairy, spices)
+- **Required Highlighting**: `ring-2 ring-green-500` for `dishChallenge.ingredients`
+- **Large UI**: `py-4` buttons, `text-lg` fonts for elderly accessibility
+- **Cart Sidebar**: Slide-in AnimatePresence, quantity controls
+- **Payment Methods**: Cash/card selection with visual feedback
+- **Earnings**: $8-12 based on tutorial completion + required ingredients
+- **Activity Type**: `'digital_skills'` for teaching elderly technology
+- **Budget Validation**: Checks `family_budget` before checkout
+
+**Tutorial Flow**:
+```typescript
+const tutorialSteps = [
+  { title: "Welcome", description: "Let's learn how to use the self-order kiosk together!", action: "Start Tutorial" },
+  { title: "Browse Products", description: "Tap on categories to see available items", action: "Continue", check: () => selectedCategory !== 'all' },
+  { title: "Add to Cart", description: "Tap the + button to add items", action: "Continue", check: () => cart.length > 0 },
+  { title: "Review Cart", description: "Open cart sidebar to review your selections", action: "Continue", check: () => showCart },
+  { title: "Complete Payment", description: "Choose payment method and checkout", action: "Finish Tutorial", check: () => cart.length > 0 }
+]
+```
+
+</details>
+
+## 🎯 Recent Achievements & Updates (November 2025)
 
 <div align="center">
 
@@ -676,8 +977,94 @@ if (success) console.log('Games restored successfully')
 - ✅ **Developer Resources**: Usage patterns and best practices
 - ✅ **Testing Protocols**: Mobile device verification checklists
 - ✅ **Code Examples**: Ready-to-use snippets for all features
+- ✅ **UI Audit Report**: Complete 69-file component analysis ([UI_AUDIT_REPORT.md](kopitalk/UI_AUDIT_REPORT.md))
+- ✅ **Research Notes**: Zustand, Framer Motion, Singapore culture best practices ([RESEARCH_NOTES.md](kopitalk/RESEARCH_NOTES.md))
 
 </details>
+
+---
+
+## 📈 **Current Project State & Next Steps**
+
+<div align="center">
+
+### 🎯 **Development Phases Progress**
+
+| Phase | Status | Completion | Key Deliverables |
+|:------|:-------|:-----------|:-----------------|
+| **Phase 1: Critical Remakes** | 🔄 In Progress | 30% | DeliveryApp ✅, SupermarketSelfOrder ✅, GameHub 🔄, BoardGame 🔄 |
+| **Phase 2: Integration** | ⏳ Pending | 0% | BoardBuilderModal flow, ESP32 backend, CookingGameMode expansion |
+| **Phase 3: Transport & Utilities** | ⏳ Pending | 0% | BusTimings, EZLinkTopUp, TikTokRecording AI analysis |
+| **Phase 4: Polish & Features** | ⏳ Pending | 0% | WeatherChallengeModal, GameVictoryScreen, consistency pass |
+| **Phase 5: Testing** | ⏳ Pending | 0% | End-to-end flows, mobile device testing, AI validation |
+
+### 📊 **Component Alignment Status**
+
+```
+Total Components: 69 (11 pages + 58 components)
+
+✅ Aligned & Modern:     28 files (40.6%)  ████████░░░░░░░░░░░░░░
+⚠️ Needs Minor Updates:  31 files (44.9%)  ████████████░░░░░░░░░░
+❌ Must Remake:          10 files (14.5%)  ███░░░░░░░░░░░░░░░░░░░
+```
+
+### 🎖️ **November 2025 Achievements**
+
+| Achievement | Impact | Status |
+|:------------|:-------|:-------|
+| **DeliveryApp Full Remake** | Weather challenges, earnings system, gameStore integration | ✅ Complete |
+| **SupermarketSelfOrder Tutorial Mode** | Youth-teaches-elderly digital skills, 5-step tutorial | ✅ Complete |
+| **UI Audit Report** | Comprehensive 69-file analysis with alignment matrix | ✅ Complete |
+| **Research Phase** | Zustand patterns, Framer Motion mobile, Singapore culture | ✅ Complete |
+| **State Architecture** | Persist middleware, selector optimization, zero boilerplate | ✅ Complete |
+
+</div>
+
+### 🚀 **Immediate Next Steps**
+
+1. **Complete BusTimings & EZLinkTopUp** (Week 1)
+   - Unified transport system integration
+   - Youth-teaches-elderly MRT/bus navigation
+   - EZ-Link balance tracking in gameStore
+   - Earnings $10-18 for transport digital skills
+
+2. **GameHub Modernization** (Week 1)
+   - Remove all mock data (initialPlayers, initialLog)
+   - Full gameStore integration
+   - Add "Build Custom Board" button → BoardBuilderModal
+   - Real-time family_budget and earnings tracker
+
+3. **BoardGame Main Flow** (Week 2)
+   - Add BoardBuilderModal as first step before family setup
+   - Trigger AI dish generation after board creation
+   - Show ActivitiesHub FAB during gameplay
+   - Integrate ESP32BoardIntegration component
+
+4. **Testing & Validation** (Week 3)
+   - End-to-end game flow testing (board build → dish → earn → collect → cook)
+   - Mobile device testing (iOS + Android)
+   - AI integration validation (conversation analysis, vision processing)
+   - Performance benchmarks (60fps animations, < 3s load)
+
+### 🎓 **Research-Backed Best Practices Applied**
+
+✅ **Zustand State Management**
+- Persist middleware with partialize for selective persistence
+- Selector optimization preventing unnecessary re-renders
+- Version migrations for schema evolution
+- Three-tier storage: games, current state, player progress
+
+✅ **Framer Motion Mobile Optimization**
+- Spring animations with optimized stiffness/damping/mass
+- useReducedMotion hook for accessibility
+- 44px+ touch targets (WCAG AAA compliance)
+- GPU-accelerated transforms for 60fps performance
+
+✅ **Singapore Cultural Authenticity**
+- Wet market etiquette (auntie/uncle addressing, bargaining)
+- MRT system culture (tap-in/tap-out, escalator etiquette)
+- Chinese New Year market dynamics (20-30% price surges)
+- Hawker center traditions (chope culture, tray returns)
 
 ---
 
@@ -690,6 +1077,8 @@ if (success) console.log('Games restored successfully')
 [![Start Playing](https://img.shields.io/badge/🎮_Start_Playing-brightgreen?style=for-the-badge)](#-quick-start)
 [![View Documentation](https://img.shields.io/badge/📚_Documentation-blue?style=for-the-badge)](#-documentation-hub)
 [![Explore Features](https://img.shields.io/badge/✨_Features-purple?style=for-the-badge)](#-features-at-a-glance)
+
+**Project Status**: 🔄 Active Development | **Last Updated**: November 2025 | **Version**: 0.9.5-alpha
 
 </div>
 

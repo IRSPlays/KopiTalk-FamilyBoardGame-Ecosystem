@@ -7,10 +7,10 @@
  */
 
 // Teaching Activities
-export { default as DigitalSkillsTeaching } from './DigitalSkillsTeaching'
+export { default as DigitalSkillsTeaching } from './DigitalSkillsTeachingEnhanced'
 
 // Exchange Activities  
-export { default as LanguageExchange } from './LanguageExchange'
+export { default as LanguageExchange } from './LanguageExchangeEnhanced'
 export { default as CookingTipsExchange } from './CookingTipsExchange'
 export { default as StorySharing } from './StorySharing'
 

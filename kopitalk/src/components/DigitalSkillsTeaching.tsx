@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Smartphone, QrCode, CreditCard, ShoppingCart, X, CheckCircle, ArrowRight } from 'lucide-react'
 import { useGameStore } from '../stores/gameStore'
+import QRCodeScanner from './QRCodeScanner'
 
 interface DigitalSkillsTeachingProps {
   currentPlayerId: number
@@ -20,9 +21,11 @@ const DigitalSkillsTeaching: React.FC<DigitalSkillsTeachingProps> = ({ currentPl
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [currentStep, setCurrentStep] = useState(0)
   const [completed, setCompleted] = useState(false)
+  const [showQRScanner, setShowQRScanner] = useState(false)
 
   const addCompletedActivity = useGameStore(state => state.addCompletedActivity)
   const updatePlayer = useGameStore(state => state.updatePlayer)
+  const updateFamilyBudget = useGameStore(state => state.updateFamilyBudget)
 
   const lessons: Lesson[] = [
     {
@@ -106,7 +109,9 @@ const DigitalSkillsTeaching: React.FC<DigitalSkillsTeachingProps> = ({ currentPl
   }
 
   const acceptReward = () => {
-    alert(`🎉 Lesson complete! Earned $${selectedLesson?.earnings}!`)
+    if (selectedLesson) {
+      updateFamilyBudget(selectedLesson.earnings)
+    }
     onClose()
   }
 
@@ -158,7 +163,13 @@ const DigitalSkillsTeaching: React.FC<DigitalSkillsTeachingProps> = ({ currentPl
                       key={lesson.id}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setSelectedLesson(lesson)}
+                      onClick={() => {
+                        if (lesson.id === 'qr-scanning') {
+                          setShowQRScanner(true)
+                        } else {
+                          setSelectedLesson(lesson)
+                        }
+                      }}
                       className="w-full bg-white border-2 border-gray-200 hover:border-blue-300 rounded-xl p-4 transition-all"
                     >
                       <div className="flex items-center justify-between">
@@ -168,7 +179,9 @@ const DigitalSkillsTeaching: React.FC<DigitalSkillsTeachingProps> = ({ currentPl
                           </div>
                           <div className="text-left">
                             <h4 className="font-bold text-gray-900">{lesson.title}</h4>
-                            <p className="text-sm text-gray-600">{lesson.steps.length} steps • ${lesson.earnings}</p>
+                            <p className="text-sm text-gray-600">
+                              {lesson.id === 'qr-scanning' ? 'Interactive practice' : `${lesson.steps.length} steps`} • ${lesson.earnings}
+                            </p>
                           </div>
                         </div>
                         <ArrowRight className="w-5 h-5 text-gray-400" />
@@ -264,6 +277,14 @@ const DigitalSkillsTeaching: React.FC<DigitalSkillsTeachingProps> = ({ currentPl
           </div>
         </motion.div>
       </motion.div>
+      
+      {/* QR Code Scanner Modal */}
+      {showQRScanner && (
+        <QRCodeScanner
+          currentPlayerId={currentPlayerId}
+          onClose={() => setShowQRScanner(false)}
+        />
+      )}
     </AnimatePresence>
   )
 }
