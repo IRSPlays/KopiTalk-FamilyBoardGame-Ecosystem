@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { ArrowLeft, ChefHat, Clock, Users, Star, CheckCircle, Play, Pause } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { gameStorage } from '../utils/gameStorage'
+import { GameSession } from '../types'
+import { getCookingRecipe } from '../utils/geminiApi'
 
 interface Recipe {
   id: string
@@ -16,110 +19,44 @@ interface Recipe {
 
 const CookingGame: React.FC = () => {
   const navigate = useNavigate()
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('sessionId');
+  const [gameSession, setGameSession] = useState<GameSession | null>(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [currentStep, setCurrentStep] = useState(0)
   const [isActive, setIsActive] = useState(false)
   const [timer, setTimer] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<boolean[]>([])
 
-  const recipes: Recipe[] = [
-    {
-      id: '1',
-      name: 'Hainanese Chicken Rice',
-      difficulty: 'Medium',
-      duration: 45,
-      serves: 4,
-      ingredients: [
-        '1 whole chicken (1.2kg)',
-        '2 cups jasmine rice',
-        '3 cloves garlic, minced',
-        '2 inches ginger, sliced',
-        '2 pandan leaves',
-        '1 cucumber, sliced',
-        'Chicken stock',
-        'Soy sauce, chili sauce'
-      ],
-      steps: [
-        'Boil chicken with ginger and pandan leaves for 30 minutes',
-        'Remove chicken and reserve stock for rice',
-        'Rinse rice and fry with garlic until fragrant',
-        'Add chicken stock to rice and cook',
-        'Shred chicken and serve with rice',
-        'Prepare chili and ginger sauces',
-        'Plate with cucumber slices'
-      ],
-      tips: [
-        'Use ice water bath to make chicken skin smooth',
-        'Don\'t overcook the rice - it should be fragrant and fluffy',
-        'The ginger sauce should be balanced - not too salty'
-      ],
-      cultural_note: 'This iconic dish represents the Hainanese community\'s adaptation to local tastes in Singapore. Each hawker has their own secret recipe!'
-    },
-    {
-      id: '2',
-      name: 'Laksa',
-      difficulty: 'Hard',
-      duration: 60,
-      serves: 4,
-      ingredients: [
-        '400g fresh laksa noodles',
-        '200ml coconut milk',
-        '500ml chicken/seafood stock',
-        '200g prawns',
-        '2 fish cakes, sliced',
-        'Bean sprouts',
-        'Laksa paste',
-        'Hard-boiled eggs',
-        'Coriander leaves'
-      ],
-      steps: [
-        'Prepare laksa paste by blending spices',
-        'Cook paste in oil until fragrant',
-        'Add stock and bring to boil',
-        'Add coconut milk and simmer',
-        'Cook prawns and fish cake',
-        'Blanch noodles and bean sprouts',
-        'Assemble bowls with toppings'
-      ],
-      tips: [
-        'The laksa paste is key - don\'t rush this step',
-        'Balance coconut milk - too much makes it cloying',
-        'Fresh prawns make all the difference'
-      ],
-      cultural_note: 'Laksa represents the beautiful fusion of Chinese noodles with Malay spice paste, creating Singapore\'s unique Peranakan cuisine.'
-    },
-    {
-      id: '3',
-      name: 'Kaya Toast',
-      difficulty: 'Easy',
-      duration: 15,
-      serves: 2,
-      ingredients: [
-        '4 slices bread',
-        '3 tbsp kaya (coconut jam)',
-        '2 tbsp butter',
-        'Pinch of salt',
-        '2 soft-boiled eggs',
-        'White pepper',
-        'Dark soy sauce'
-      ],
-      steps: [
-        'Toast bread until golden brown',
-        'Spread butter on hot toast',
-        'Add generous layer of kaya',
-        'Prepare soft-boiled eggs (6-7 minutes)',
-        'Crack eggs into bowl',
-        'Add soy sauce and pepper',
-        'Serve together as kopitiam set'
-      ],
-      tips: [
-        'Toast should be crispy outside, soft inside',
-        'Don\'t skimp on the butter and kaya',
-        'Eggs should be runny - perfect for dipping'
-      ],
-      cultural_note: 'This quintessential kopitiam breakfast connects generations. Many grandparents have fond memories of enjoying this with kopi-o!'
+  useEffect(() => {
+    if (sessionId) {
+      const session = gameStorage.getGame(sessionId);
+      if (session) {
+        setGameSession(session);
+        const ingredients = session.challenge?.purchased_ingredients || [];
+        if (ingredients.length > 0) {
+          getCookingRecipe(ingredients).then(generatedRecipe => {
+            setRecipe({
+              id: 'gemini-recipe',
+              name: generatedRecipe.name,
+              difficulty: 'Medium',
+              duration: 45,
+              serves: 4,
+              ingredients: ingredients,
+              steps: generatedRecipe.steps,
+              tips: generatedRecipe.tips,
+              cultural_note: generatedRecipe.description
+            });
+            setLoading(false);
+          });
+        } else {
+          setLoading(false);
+        }
+      }
     }
-  ]
+  }, [sessionId]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
@@ -190,48 +127,21 @@ const CookingGame: React.FC = () => {
           </div>
         </div>
 
-        {!selectedRecipe ? (
-          <div>
-            {/* Recipe Selection */}
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Choose a Recipe</h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {recipes.map((recipe) => (
-                  <div
-                    key={recipe.id}
-                    onClick={() => setSelectedRecipe(recipe)}
-                    className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="font-semibold text-gray-900">{recipe.name}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(recipe.difficulty)}`}>
-                        {recipe.difficulty}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        {recipe.duration} minutes
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Users className="w-4 h-4" />
-                        Serves {recipe.serves}
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-gray-600 mb-4">{recipe.cultural_note}</p>
-
-                    <div className="flex items-center gap-1">
-                      {[1,2,3,4,5].map((star) => (
-                        <Star key={star} className="w-4 h-4 text-yellow-400 fill-current" />
-                      ))}
-                      <span className="text-sm text-gray-500 ml-2">Family Favorite</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {loading ? (
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kopi-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Generating your recipe...</p>
+          </div>
+        ) : !recipe ? (
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">No ingredients found!</h2>
+            <p className="text-gray-600 mb-4">Go to the supermarket in the main game to buy ingredients for your challenge.</p>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-kopi-500 text-white px-6 py-2 rounded-lg hover:bg-kopi-600 transition-colors"
+            >
+              Back to Game
+            </button>
           </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
@@ -240,31 +150,25 @@ const CookingGame: React.FC = () => {
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">{selectedRecipe.name}</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{recipe.name}</h2>
                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        {selectedRecipe.duration} min
+                        {recipe.duration} min
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        Serves {selectedRecipe.serves}
+                        Serves {recipe.serves}
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(selectedRecipe.difficulty)}`}>
-                        {selectedRecipe.difficulty}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(recipe.difficulty)}`}>
+                        {recipe.difficulty}
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setSelectedRecipe(null)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                  </button>
                 </div>
 
                 <div className="bg-orange-50 rounded-lg p-4 mb-6">
-                  <p className="text-orange-800 text-sm">{selectedRecipe.cultural_note}</p>
+                  <p className="text-orange-800 text-sm">{recipe.cultural_note}</p>
                 </div>
 
                 {!isActive && completedSteps.length === 0 && (
@@ -296,7 +200,7 @@ const CookingGame: React.FC = () => {
                   </div>
 
                   <div className="space-y-3">
-                    {selectedRecipe.steps.map((step, index) => (
+                    {recipe.steps.map((step, index) => (
                       <div
                         key={index}
                         className={`p-4 rounded-lg border-2 transition-colors ${
@@ -342,7 +246,7 @@ const CookingGame: React.FC = () => {
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Ingredients</h3>
                 <div className="space-y-2">
-                  {selectedRecipe.ingredients.map((ingredient, index) => (
+                  {recipe.ingredients.map((ingredient, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-orange-400 rounded-full" />
                       <span className="text-sm text-gray-700">{ingredient}</span>
@@ -355,7 +259,7 @@ const CookingGame: React.FC = () => {
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Pro Tips</h3>
                 <div className="space-y-3">
-                  {selectedRecipe.tips.map((tip, index) => (
+                  {recipe.tips.map((tip, index) => (
                     <div key={index} className="bg-yellow-50 p-3 rounded-lg">
                       <p className="text-sm text-yellow-800">{tip}</p>
                     </div>

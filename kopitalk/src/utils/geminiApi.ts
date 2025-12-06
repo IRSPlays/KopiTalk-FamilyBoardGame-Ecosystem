@@ -32,6 +32,12 @@ export interface VideoAnalysis {
   creativity_level: 'basic' | 'good' | 'great' | 'amazing'
 }
 
+export interface Challenge {
+  title: string
+  description: string
+  ingredients: string[]
+}
+
 export interface RandomEvent {
   type: 'positive' | 'negative' | 'funny_face' | 'funny_dance' | 'snack_time' | 'drink_time'
   title: string
@@ -163,8 +169,8 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
     `
     
     // Use CORRECT multimodal API pattern based on @google/genai v1.19.0
-    const response = await genAI.models.generateContent({
-      model: MODEL,
+    const model = genAI.getGenerativeModel({ model: MODEL });
+    const response = await model.generateContent({
       contents: [
         {
           role: 'user', 
@@ -243,8 +249,6 @@ export const analyzeConversation = async (audioBlob: Blob, duration: number): Pr
     console.log('🔄 Using fallback analysis:', fallbackAnalysis)
     return fallbackAnalysis
   }
-}
-
 export const analyzeVideo = async (videoBlob: Blob, description: string): Promise<VideoAnalysis> => {
   try {
     // Check if API is properly initialized
@@ -296,8 +300,8 @@ export const analyzeVideo = async (videoBlob: Blob, description: string): Promis
     `
     
     // Use CORRECT multimodal API pattern based on @google/genai v1.19.0
-    const response = await genAI.models.generateContent({
-      model: MODEL,
+    const model = genAI.getGenerativeModel({ model: MODEL });
+    const response = await model.generateContent({
       contents: [
         {
           role: 'user',
@@ -384,5 +388,94 @@ export const analyzeVideo = async (videoBlob: Blob, description: string): Promis
     
     console.log('🔄 Using video fallback analysis:', fallbackAnalysis)
     return fallbackAnalysis
+  }
+}
+
+export const getGameChallenge = async (): Promise<Challenge> => {
+  try {
+    if (!genAI) {
+      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
+    }
+
+    const prompt = `
+    Create a fun, family-friendly cooking challenge based on Singaporean cuisine.
+    The challenge should have a title, a short description, and a list of 3-5 ingredients.
+    The ingredients should be common and easily found in a Singaporean supermarket.
+
+    Respond in JSON format with: title, description, ingredients.
+
+    Example response:
+    {
+      "title": "The Great Family Satay-off",
+      "description": "Work together as a family to create the most delicious chicken satay from scratch! Who will make the best peanut sauce?",
+      "ingredients": ["chicken thigh", "lemongrass", "turmeric powder", "peanuts", "coconut milk"]
+    }
+    `
+
+    const model = genAI.getGenerativeModel({ model: MODEL });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim()
+    const challenge = JSON.parse(cleanText)
+    return challenge
+
+  } catch (error) {
+    console.error('❌ Gemini API getGameChallenge error:', error)
+
+    // Fallback challenge
+    const fallbackChallenge: Challenge = {
+      title: "Kaya Toast Creation",
+      description: "A classic Singaporean breakfast! Work together to make the perfect kaya toast and soft-boiled eggs.",
+      ingredients: ["white bread", "kaya jam", "butter", "eggs", "dark soy sauce"]
+    }
+    return fallbackChallenge
+  }
+}
+
+export const getCookingRecipe = async (ingredients: string[]): Promise<any> => {
+  try {
+    if (!genAI) {
+      throw new Error('❌ Gemini API not initialized. Please check your API key configuration.')
+    }
+
+    const prompt = `
+    Based on the following ingredients, create a simple Singaporean recipe:
+    ${ingredients.join(', ')}
+
+    The recipe should be fun and easy for a family to cook together.
+
+    Respond in JSON format with: name, description, steps, tips.
+
+    Example response:
+    {
+      "name": "Simple Chicken and Rice",
+      "description": "A simplified version of the classic Hainanese Chicken Rice, perfect for a family cooking activity.",
+      "steps": ["Wash the rice.", "Cook the chicken.", "Serve with cucumber and soy sauce."],
+      "tips": ["Use chicken stock to cook the rice for extra flavor.", "Don't overcook the chicken."]
+    }
+    `
+
+    const model = genAI.getGenerativeModel({ model: MODEL });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim()
+    const recipe = JSON.parse(cleanText)
+    return recipe
+
+  } catch (error) {
+    console.error('❌ Gemini API getCookingRecipe error:', error)
+
+    // Fallback recipe
+    const fallbackRecipe = {
+      name: "Instant Noodle Delight",
+      description: "A creative instant noodle dish using your available ingredients.",
+      steps: ["Boil water.", "Cook noodles.", "Add your ingredients and enjoy!"],
+      tips: ["Add a soft-boiled egg for extra protein.", "A dash of sesame oil makes it extra fragrant."]
+    }
+    return fallbackRecipe
   }
 }
