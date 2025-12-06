@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { GameSession, FamilyMember } from '../types'
 import { 
   Users, 
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react'
 import AudioRecordingModal from './AudioRecordingModal'
 import TikTokRecordingModal from './TikTokRecordingModal'
+import SupermarketModal from './SupermarketModal'
 import { ConversationAnalysis, VideoAnalysis, RandomEvent, getRandomEvent } from '../utils/geminiApi'
 
 interface Props {
@@ -31,10 +33,12 @@ interface Props {
 const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
   const [showAudioModal, setShowAudioModal] = useState(false)
   const [showTikTokModal, setShowTikTokModal] = useState(false)
+  const [showSupermarketModal, setShowSupermarketModal] = useState(false)
   const [diceRoll, setDiceRoll] = useState<number | null>(null)
   const [isRolling, setIsRolling] = useState(false)
   const [currentEvent, setCurrentEvent] = useState<RandomEvent | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
+  const navigate = useNavigate()
 
   // Markets data
   const markets = [
@@ -192,21 +196,7 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
   }
 
   const handleMarketShopping = (marketId: string) => {
-    const market = markets.find(m => m.id === marketId)
-    if (!market) return
-    
-    // Simple shopping simulation
-    const cost = Math.floor(Math.random() * 30) + 20 // $20-50
-    const earnings = Math.floor(cost * 0.1) + 5 // Small profit
-    
-    if (currentPlayer.cash >= cost) {
-      updatePlayer(gameSession.current_player_index, {
-        cash: currentPlayer.cash - cost + earnings
-      })
-      alert(`Shopped at ${market.name}!\nSpent: $${cost}\nEarned from reselling: $${earnings}`)
-    } else {
-      alert(`Not enough cash! You need $${cost} but only have $${currentPlayer.cash}`)
-    }
+    setShowSupermarketModal(true);
   }
 
   const getDiceIcon = (number: number | null) => {
@@ -358,6 +348,15 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
                   <h3 className="font-semibold mb-2 bounce-in">Visit Markets</h3>
                   <p className="text-sm opacity-90 mb-3 fade-in-up">Shop for ingredients at different locations</p>
                 </div>
+                {/* Cooking Game */}
+                <button
+                  onClick={() => navigate(`/cooking?sessionId=${gameSession.id}`)}
+                  className="card-hover p-6 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl disabled:opacity-50 fade-in-up glow-pulse"
+                >
+                  <ChefHat className="w-8 h-8 mb-3 animate-bounce" />
+                  <h3 className="font-semibold mb-2 bounce-in">Start Cooking</h3>
+                  <p className="text-sm opacity-90 shimmer">Use your ingredients to cook the challenge dish!</p>
+                </button>
               </div>
 
               {/* Markets Grid */}
@@ -444,6 +443,13 @@ const GameplayInterface: React.FC<Props> = ({ gameSession, onUpdateGame }) => {
           </div>
         </div>
       )}
+
+      <SupermarketModal
+        isOpen={showSupermarketModal}
+        onClose={() => setShowSupermarketModal(false)}
+        gameSession={gameSession}
+        onUpdateGame={onUpdateGame}
+      />
     </div>
   )
 }

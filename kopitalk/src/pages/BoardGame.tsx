@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { gameStorage } from '../utils/gameStorage'
-import { GameSession } from '../types'
+import { GameSession, Challenge } from '../types'
+import { getGameChallenge } from '../utils/geminiApi'
 import FamilySetup from '../components/FamilySetup'
 import BoardSetupModal from '../components/BoardSetupModal'
 import GameplayInterface from '../components/GameplayInterface'
@@ -58,12 +59,27 @@ const BoardGame: React.FC = () => {
     }
   }
 
+  useEffect(() => {
+    if (gameSession?.game_phase === 'challenge') {
+      getGameChallenge().then(challengeData => {
+        const challenge: Challenge = {
+          ...challengeData,
+          purchased_ingredients: []
+        }
+        updateGameSession({
+          challenge,
+          game_phase: 'gameplay'
+        })
+      })
+    }
+  }, [gameSession?.game_phase])
+
   const handleFamilySetupComplete = (difficulty: string, players: any[]) => {
     const budgetMap: Record<string, number> = {
-      easy: 0,
-      medium: 0,
-      hard: 0,
-      expert: 0
+      easy: 200,
+      medium: 150,
+      hard: 100,
+      expert: 50
     }
 
     updateGameSession({
@@ -73,17 +89,18 @@ const BoardGame: React.FC = () => {
         ...player,
         position: 0,
         points: 0,
-        cash: 0,
-        ezlink_balance: 0
+        cash: budgetMap[difficulty] / players.length,
+        ezlink_balance: 10
       })),
       game_phase: 'board_setup',
-      current_player_index: 0
+      current_player_index: 0,
+      challenge: null
     })
   }
 
   const handleBoardSetupComplete = () => {
     updateGameSession({
-      game_phase: 'gameplay'
+      game_phase: 'challenge'
     })
   }
 
@@ -138,7 +155,15 @@ const BoardGame: React.FC = () => {
           onUpdateGame={updateGameSession}
         />
       )
-    
+    case 'challenge':
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-kopi-50 to-talk-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kopi-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Generating your family challenge...</p>
+          </div>
+        </div>
+      )
     default:
       return (
         <div className="min-h-screen bg-gradient-to-br from-kopi-50 to-talk-50 flex items-center justify-center">

@@ -1,13 +1,22 @@
+export interface Challenge {
+  title: string;
+  description: string;
+  ingredients: string[];
+  purchased_ingredients: string[];
+  recipe?: any; // To be populated later
+}
+
 export interface GameSession {
-  id: string
-  difficulty: string
-  family_budget: number
-  family_members: FamilyMember[]
-  game_phase: string
-  current_player_index: number
-  game_scenario: any
-  created_date: string
-  last_updated: string
+  id:string;
+  difficulty: string;
+  family_budget: number;
+  family_members: FamilyMember[];
+  game_phase: 'family_setup' | 'board_setup' | 'challenge' | 'gameplay';
+  current_player_index: number;
+  game_scenario: any;
+  challenge: Challenge | null;
+  created_date: string;
+  last_updated: string;
 }
 
 export interface FamilyMember {
