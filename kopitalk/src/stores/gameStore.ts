@@ -29,7 +29,7 @@ export interface DishChallenge {
 
 export interface CompletedActivity {
   id: string
-  type: 'photo' | 'story' | 'quiz' | 'digital_skills' | 'language' | 'cooking_tips' | 'market_roleplay' | 'transport' | 'healthy_eating' | 'recipe_challenge'
+  type: 'photo' | 'story' | 'quiz' | 'digital_skills' | 'language' | 'language_exchange' | 'cooking_tips' | 'market_roleplay' | 'transport' | 'transport_navigation' | 'healthy_eating' | 'recipe_challenge'
   timestamp: string
   earnings: number
   participants: number[] // player indices

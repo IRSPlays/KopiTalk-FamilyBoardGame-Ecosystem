@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
 
@@ -43,42 +43,43 @@ export async function generateCookingInstructions(
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: {
-        type: 'OBJECT',
+        type: SchemaType.OBJECT,
         properties: {
-          dishName: { type: 'STRING' },
-          totalSteps: { type: 'NUMBER' },
-          difficulty: { 
-            type: 'STRING',
+          dishName: { type: SchemaType.STRING },
+          totalSteps: { type: SchemaType.NUMBER },
+          difficulty: {
+            type: SchemaType.STRING,
+            format: 'enum' as const,
             enum: ['beginner', 'intermediate', 'advanced']
           },
-          culturalBackground: { type: 'STRING' },
-          estimatedTotalTime: { type: 'NUMBER' },
-          servings: { type: 'NUMBER' },
+          culturalBackground: { type: SchemaType.STRING },
+          estimatedTotalTime: { type: SchemaType.NUMBER },
+          servings: { type: SchemaType.NUMBER },
           steps: {
-            type: 'ARRAY',
+            type: SchemaType.ARRAY,
             items: {
-              type: 'OBJECT',
+              type: SchemaType.OBJECT,
               properties: {
-                stepNumber: { type: 'NUMBER' },
-                instruction: { type: 'STRING' },
+                stepNumber: { type: SchemaType.NUMBER },
+                instruction: { type: SchemaType.STRING },
                 requiredIngredients: {
-                  type: 'ARRAY',
-                  items: { type: 'STRING' }
+                  type: SchemaType.ARRAY,
+                  items: { type: SchemaType.STRING }
                 },
-                requiredAppliance: { type: 'STRING' },
+                requiredAppliance: { type: SchemaType.STRING },
                 prepActions: {
-                  type: 'ARRAY',
-                  items: { type: 'STRING' }
+                  type: SchemaType.ARRAY,
+                  items: { type: SchemaType.STRING }
                 },
-                estimatedTime: { type: 'NUMBER' },
-                culturalContext: { type: 'STRING' },
+                estimatedTime: { type: SchemaType.NUMBER },
+                culturalContext: { type: SchemaType.STRING },
                 tips: {
-                  type: 'ARRAY',
-                  items: { type: 'STRING' }
+                  type: SchemaType.ARRAY,
+                  items: { type: SchemaType.STRING }
                 },
                 combinationsNeeded: {
-                  type: 'ARRAY',
-                  items: { type: 'STRING' }
+                  type: SchemaType.ARRAY,
+                  items: { type: SchemaType.STRING }
                 }
               },
               required: ['stepNumber', 'instruction', 'requiredIngredients', 'requiredAppliance', 'estimatedTime']
@@ -144,11 +145,11 @@ export async function validateCookingAction(
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: {
-        type: 'OBJECT',
+        type: SchemaType.OBJECT,
         properties: {
-          valid: { type: 'BOOLEAN' },
-          feedback: { type: 'STRING' },
-          score: { type: 'NUMBER' }
+          valid: { type: SchemaType.BOOLEAN },
+          feedback: { type: SchemaType.STRING },
+          score: { type: SchemaType.NUMBER }
         },
         required: ['valid', 'feedback', 'score']
       }
@@ -238,8 +239,8 @@ export async function suggestSubstitutions(
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: {
-        type: 'ARRAY',
-        items: { type: 'STRING' }
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING }
       }
     }
   })
@@ -276,17 +277,17 @@ export async function getIngredientCombinations(
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: {
-        type: 'ARRAY',
+        type: SchemaType.ARRAY,
         items: {
-          type: 'OBJECT',
+          type: SchemaType.OBJECT,
           properties: {
-            name: { type: 'STRING' },
+            name: { type: SchemaType.STRING },
             ingredients: {
-              type: 'ARRAY',
-              items: { type: 'STRING' }
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING }
             },
-            result: { type: 'STRING' },
-            culturalNote: { type: 'STRING' }
+            result: { type: SchemaType.STRING },
+            culturalNote: { type: SchemaType.STRING }
           },
           required: ['name', 'ingredients', 'result', 'culturalNote']
         }
@@ -333,11 +334,11 @@ export async function analyzeMistake(
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: {
-        type: 'OBJECT',
+        type: SchemaType.OBJECT,
         properties: {
-          canRecover: { type: 'BOOLEAN' },
-          suggestion: { type: 'STRING' },
-          culturalTip: { type: 'STRING' }
+          canRecover: { type: SchemaType.BOOLEAN },
+          suggestion: { type: SchemaType.STRING },
+          culturalTip: { type: SchemaType.STRING }
         },
         required: ['canRecover', 'suggestion']
       }
@@ -388,15 +389,15 @@ export async function getDishCulturalContext(
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: {
-        type: 'OBJECT',
+        type: SchemaType.OBJECT,
         properties: {
-          origin: { type: 'STRING' },
-          significance: { type: 'STRING' },
-          traditionalMethod: { type: 'STRING' },
-          modernAdaptation: { type: 'STRING' },
+          origin: { type: SchemaType.STRING },
+          significance: { type: SchemaType.STRING },
+          traditionalMethod: { type: SchemaType.STRING },
+          modernAdaptation: { type: SchemaType.STRING },
           familyTraditions: {
-            type: 'ARRAY',
-            items: { type: 'STRING' }
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING }
           }
         },
         required: ['origin', 'significance', 'traditionalMethod', 'modernAdaptation', 'familyTraditions']
