@@ -23,7 +23,7 @@ import toast from 'react-hot-toast'
 
 // Cooking states
 type CookingState = 'idle' | 'raw' | 'cooking' | 'perfect' | 'overdone' | 'burnt'
-type CookingMethod = 'steam' | 'fry' | 'boil' | 'bake' | 'stir_fry' | 'grill'
+type CookingMethod = 'steam' | 'fry' | 'boil' | 'bake' | 'stir-fry' | 'grill'
 type GamePhase = 'prep' | 'cooking' | 'plating' | 'complete'
 
 interface IngredientSlot {
@@ -74,7 +74,7 @@ const CookingGameInteractive: React.FC = () => {
   // Check if all ingredients are collected
   const requiredIngredients = dishChallenge?.ingredients || []
   const missingIngredients = requiredIngredients.filter(
-    req => !collectedIngredients.some(col => col.name === req.name && col.is_collected)
+    req => !collectedIngredients.some(col => col.name === req.name && col.collected)
   )
   const allIngredientsCollected = missingIngredients.length === 0
 
@@ -87,7 +87,7 @@ const CookingGameInteractive: React.FC = () => {
 
     switch (method) {
       case 'fry':
-      case 'stir_fry':
+      case 'stir-fry':
         equipmentList = [
           {
             id: 'pan',
@@ -165,7 +165,7 @@ const CookingGameInteractive: React.FC = () => {
     
     // Initialize available ingredients
     const ingredients = collectedIngredients
-      .filter(ing => ing.is_collected)
+      .filter(ing => ing.collected)
       .map(ing => ing.name)
     setAvailableIngredients(ingredients)
   }, [dishChallenge, collectedIngredients])
@@ -349,7 +349,7 @@ const CookingGameInteractive: React.FC = () => {
     const finalReward = Math.floor(reward * bonusMultiplier)
 
     updateFamilyBudget(finalReward)
-    completeDish()
+    completeDish(score)
 
     setGamePhase('complete')
     
@@ -608,8 +608,10 @@ const IngredientCard: React.FC<{ name: string }> = ({ name }) => {
     <motion.div
       draggable
       onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = 'move'
-        e.dataTransfer.setData('text/plain', name)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const de = e as any
+        de.dataTransfer.effectAllowed = 'move'
+        de.dataTransfer.setData('text/plain', name)
       }}
       className="bg-gradient-to-r from-purple-100 to-pink-100 p-3 rounded-lg border-2 border-purple-300 cursor-move hover:shadow-md transition-all"
       initial={{ opacity: 0, x: -20 }}

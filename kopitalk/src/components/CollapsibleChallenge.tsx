@@ -79,7 +79,7 @@ const CollapsibleChallenge: React.FC<CollapsibleChallengeProps> = ({
               <h3 className="font-bold text-gray-800 flex items-center gap-2">
                 {challenge.title}
                 {challenge.family_cooperation_required && (
-                  <Users className="w-4 h-4 text-purple-500" title="Family Cooperation Required" />
+                  <Users className="w-4 h-4 text-purple-500" aria-label="Family Cooperation Required" />
                 )}
               </h3>
               <div className="flex items-center gap-2 mt-1">
@@ -184,35 +184,35 @@ const CollapsibleChallenge: React.FC<CollapsibleChallengeProps> = ({
           )}
 
           {/* Rewards */}
-          {challenge.rewards && (
+          {challenge.reward && (
             <div className="p-4 border-t border-gray-100">
               <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
                 <Trophy className="w-4 h-4" />
                 Rewards
               </h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {challenge.rewards.money && challenge.rewards.money > 0 && (
+                {challenge.reward.money && challenge.reward.money > 0 && (
                   <div className="bg-green-50 p-2 rounded-lg text-center">
                     <div className="text-lg">💰</div>
-                    <div className="text-sm font-medium text-green-800">${challenge.rewards.money}</div>
+                    <div className="text-sm font-medium text-green-800">${challenge.reward.money}</div>
                   </div>
                 )}
-                {challenge.rewards.points && challenge.rewards.points > 0 && (
+                {challenge.reward.points && challenge.reward.points > 0 && (
                   <div className="bg-blue-50 p-2 rounded-lg text-center">
                     <div className="text-lg">⭐</div>
-                    <div className="text-sm font-medium text-blue-800">{challenge.rewards.points} pts</div>
+                    <div className="text-sm font-medium text-blue-800">{challenge.reward.points} pts</div>
                   </div>
                 )}
-                {challenge.rewards.movement && challenge.rewards.movement > 0 && (
+                {challenge.reward.movement && challenge.reward.movement > 0 && (
                   <div className="bg-purple-50 p-2 rounded-lg text-center">
                     <div className="text-lg">🚀</div>
-                    <div className="text-sm font-medium text-purple-800">+{challenge.rewards.movement} moves</div>
+                    <div className="text-sm font-medium text-purple-800">+{challenge.reward.movement} moves</div>
                   </div>
                 )}
-                {challenge.rewards.special_bonus && (
+                {challenge.reward.special_bonus && (
                   <div className="bg-yellow-50 p-2 rounded-lg text-center">
                     <div className="text-lg">🎁</div>
-                    <div className="text-xs font-medium text-yellow-800">{challenge.rewards.special_bonus}</div>
+                    <div className="text-xs font-medium text-yellow-800">{challenge.reward.special_bonus}</div>
                   </div>
                 )}
               </div>

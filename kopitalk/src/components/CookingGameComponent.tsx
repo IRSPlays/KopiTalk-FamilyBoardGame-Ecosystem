@@ -244,7 +244,7 @@ const CookingGameComponent: React.FC = () => {
                     <Star className="w-5 h-5 text-blue-600" />
                     <div>
                       <p className="text-xs text-gray-600">Difficulty</p>
-                      <p className="font-bold text-gray-900 capitalize">{dishChallenge.difficulty}</p>
+                      <p className="font-bold text-gray-900 capitalize">{dishChallenge.difficulty_level}</p>
                     </div>
                   </div>
                 </div>
